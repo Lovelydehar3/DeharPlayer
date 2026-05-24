@@ -34,11 +34,4 @@ Dehar Player is a clean Android video player built with Kotlin, Jetpack Compose,
 .\gradlew.bat assembleDebug
 ```
 
-The APK is created at:
 
-```text
-app\build\outputs\apk\debug\app-debug.apk
-```
-
-For release publishing, create your own keystore and signing config locally. Do not commit keystores, passwords, generated APKs, or the reference `MX Player Pro.apk`.
-#
