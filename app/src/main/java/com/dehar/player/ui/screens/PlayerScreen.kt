@@ -844,7 +844,7 @@ private fun TrackChoiceDialog(
                     }
                 }
 
-                Divider(color = Color.DarkGray)
+                HorizontalDivider(color = Color.DarkGray)
 
                 TextButton(onClick = { onSelect(null) }) {
                     Text(disabledText, color = Color.White, fontSize = 16.sp)
