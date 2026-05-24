@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dehar Player</string>
+    <string name="title_folders">Folders</string>
+    <string name="title_videos">Videos</string>
+    <string name="no_videos_found">No videos found on this device.</string>
+    <string name="enter_pin">Enter 4-digit passcode</string>
+    <string name="set_pin">Set a 4-digit passcode</string>
+    <string name="confirm_pin">Confirm your passcode</string>
+    <string name="wrong_pin">Wrong passcode. Try again.</string>
+    <string name="pin_mismatch">Passcodes do not match. Try again.</string>
+    <string name="pin_set_success">Passcode set.</string>
+    <string name="search_videos">Search videos...</string>
+    <string name="sort_by">Sort by</string>
+    <string name="delete">Delete</string>
+    <string name="share">Share</string>
+    <string name="info">Information</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="subtitles">Subtitles</string>
+    <string name="playback_speed">Playback Speed</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
+    <string name="brightness">Brightness</string>
+    <string name="volume">Volume</string>
+    <string name="permission_required">Storage Permission Required</string>
+    <string name="permission_rationale">Storage access is used only to find and play videos stored on your device.</string>
+    <string name="grant_permission">Grant Permission</string>
+</resources>

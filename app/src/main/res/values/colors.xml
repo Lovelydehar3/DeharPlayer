@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dehar_orange">#FF9800</color>
+    <color name="dehar_orange_dark">#F57C00</color>
+    <color name="dehar_orange_light">#FFB74D</color>
+    <color name="dehar_background">#121212</color>
+    <color name="dehar_surface">#1E1E1E</color>
+    <color name="dehar_surface_variant">#2A2A2A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
