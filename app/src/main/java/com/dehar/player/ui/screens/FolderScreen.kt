@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +25,7 @@ import com.dehar.player.data.VideoData
 import com.dehar.player.data.VideoRepository
 import com.dehar.player.ui.components.VideoItemCard
 import com.dehar.player.ui.navigation.Routes
-import com.dehar.player.ui.theme.DeharBackground
+import com.dehar.player.ui.theme.DeharUnplayedCyan
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +38,7 @@ fun FolderScreen(
     modifier: Modifier = Modifier
 ) {
     var videos by remember { mutableStateOf<List<VideoData>>(emptyList()) }
+    var lastPositions by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
     var sortOrder by remember { mutableStateOf(SortOrder.NAME_ASC) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -45,7 +49,9 @@ fun FolderScreen(
 
     LaunchedEffect(folderPath) {
         sortOrder = preferencesManager.getSortOrder()
-        videos = videoRepository.getVideosInFolder(folderPath, sortOrder)
+        val list = videoRepository.getVideosInFolder(folderPath, sortOrder)
+        videos = list
+        lastPositions = preferencesManager.getLastPositions(list.map { it.path })
     }
 
     val filteredVideos = remember(videos, searchQuery) {
@@ -81,7 +87,8 @@ fun FolderScreen(
                         Text(
                             text = folderName,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontSize = 23.sp,
+                            color = Color(0xFFE8EDF3)
                         )
                     }
                 },
@@ -90,7 +97,7 @@ fun FolderScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color(0xFFE8EDF3)
                         )
                     }
                 },
@@ -102,21 +109,42 @@ fun FolderScreen(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = Color.White
+                            tint = Color(0xFFE8EDF3)
+                        )
+                    }
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.List,
+                            contentDescription = "View mode",
+                            tint = Color(0xFFE8EDF3)
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeharBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        floatingActionButton = {
+            if (videos.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = {
+                        navController.navigate(Routes.player(0, folderPath))
+                    },
+                    containerColor = DeharUnplayedCyan,
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play Folder")
+                }
+            }
         },
         modifier = modifier
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(DeharBackground)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
             if (filteredVideos.isEmpty()) {
@@ -133,11 +161,13 @@ fun FolderScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(bottom = 96.dp)
                 ) {
                     itemsIndexed(filteredVideos) { _, video ->
+                        val hasPlayed = (lastPositions[video.path] ?: 0L) > 0L
                         VideoItemCard(
                             video = video,
+                            isPlayed = hasPlayed,
                             onClick = {
                                 val originalIndex = videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
                                 navController.navigate(

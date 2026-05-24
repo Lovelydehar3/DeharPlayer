@@ -5,9 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,12 +23,13 @@ import coil.compose.AsyncImage
 import com.dehar.player.data.VideoData
 import com.dehar.player.ui.theme.DeharOrange
 import com.dehar.player.ui.theme.DeharSurface
-import com.dehar.player.utils.FileUtils
+import com.dehar.player.ui.theme.DeharUnplayedCyan
 import com.dehar.player.utils.TimeUtils
 
 @Composable
 fun VideoItemCard(
     video: VideoData,
+    isPlayed: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -36,12 +37,12 @@ fun VideoItemCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(width = 120.dp, height = 74.dp)
+                .size(width = 126.dp, height = 70.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(DeharSurface),
             contentAlignment = Alignment.Center
@@ -62,7 +63,7 @@ fun VideoItemCard(
             Icon(
                 imageVector = Icons.Default.PlayArrow,
                 contentDescription = "Video Play",
-                tint = DeharOrange.copy(alpha = 0.8f),
+                tint = DeharUnplayedCyan,
                 modifier = Modifier.size(32.dp)
             )
 
@@ -84,48 +85,66 @@ fun VideoItemCard(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Info Column
+        val titleColor = if (isPlayed) Color(0xFFE8EDF3) else DeharUnplayedCyan
+
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = video.displayName,
-                color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
+                color = titleColor,
+                fontSize = 17.sp,
+                lineHeight = 21.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
             Spacer(modifier = Modifier.height(4.dp))
             
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // Format size and resolution
+            val resolution = when {
+                video.height >= 2160 -> "4K"
+                video.height >= 1080 -> "1080p"
+                video.height >= 720 -> "720p"
+                video.height >= 480 -> "480p"
+                video.height > 0 -> "${video.height}p"
+                else -> ""
+            }
+            val sizeStr = when {
+                video.size >= 1024 * 1024 * 1024 -> String.format("%.2f GB", video.size.toDouble() / (1024 * 1024 * 1024))
+                video.size >= 1024 * 1024 -> String.format("%.2f MB", video.size.toDouble() / (1024 * 1024))
+                else -> String.format("%.2f KB", video.size.toDouble() / 1024)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = FileUtils.formatFileSize(video.size),
-                    color = Color.Gray,
-                    fontSize = 12.sp
+                    text = sizeStr,
+                    color = Color(0xFF9AA6B2),
+                    fontSize = 13.sp
                 )
-                
-                val res = FileUtils.getResolution(video.width, video.height)
-                if (res.isNotEmpty()) {
+                if (resolution.isNotEmpty()) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
-                            .background(Color.DarkGray, shape = RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .background(Color(0xFF3A3A3A), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = res,
-                            color = Color.LightGray,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
+                            text = resolution,
+                            color = Color(0xFFCCCCCC),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
         }
+
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "Video options",
+            tint = Color(0xFFE8EDF3),
+            modifier = Modifier.size(28.dp)
+        )
     }
 }
