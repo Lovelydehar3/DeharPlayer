@@ -305,141 +305,142 @@ fun PlayerScreen(
                         )
                     }
                 } else {
-                    // Full controls overlay
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Top bar
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .align(Alignment.TopCenter)
+                                .padding(start = 18.dp, top = 18.dp, end = 18.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
                                 IconButton(onClick = { navController.popBackStack() }) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = "Back",
-                                        tint = Color.White
+                                        tint = Color.White,
+                                        modifier = Modifier.size(34.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = videos.getOrNull(currentIndex)?.displayName ?: "",
                                     color = Color.White,
-                                    fontSize = 16.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    maxLines = 1
+                                    maxLines = 2,
+                                    lineHeight = 23.sp
                                 )
                             }
 
-                            Row {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 PlayerTextButton(
-                                    text = "AUD",
+                                    text = "♪",
                                     onClick = { audioDialogVisible = true }
                                 )
-
                                 PlayerTextButton(
-                                    text = "SUB",
+                                    text = "▤",
                                     onClick = { subtitleDialogVisible = true }
                                 )
-
                                 PlayerTextButton(
                                     text = decoderMode.substringBefore(" "),
                                     onClick = { decoderDialogVisible = true }
                                 )
-
-                                IconButton(onClick = {
-                                    currentResizeMode = when (currentResizeMode) {
-                                        AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                                        AspectRatioFrameLayout.RESIZE_MODE_FILL -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                                        else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                    }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = "Aspect Ratio",
-                                        tint = Color.White
-                                    )
-                                }
-
-                                IconButton(onClick = { speedMenuExpanded = true }) {
-                                    Text(
-                                        text = "${currentSpeed.cleanSpeed()}x",
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    DropdownMenu(
-                                        expanded = speedMenuExpanded,
-                                        onDismissRequest = { speedMenuExpanded = false }
-                                    ) {
-                                        listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { spd ->
-                                            DropdownMenuItem(
-                                                text = { Text("${spd}x") },
-                                                onClick = {
-                                                    speedMenuExpanded = false
-                                                    currentSpeed = spd
-                                                    playerManager.setPlaybackSpeed(spd)
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-
                                 IconButton(onClick = { isControlsLocked = true }) {
                                     Icon(
                                         imageVector = Icons.Default.Lock,
                                         contentDescription = "Lock controls",
-                                        tint = Color.White
+                                        tint = Color.White,
+                                        modifier = Modifier.size(34.dp)
+                                    )
+                                }
+                                IconButton(onClick = { showControls = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "More options",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(32.dp)
                                     )
                                 }
                             }
                         }
 
-                        // Center Controls (Play/Pause, Prev, Next)
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterHorizontally),
+                                .align(Alignment.TopStart)
+                                .padding(start = 28.dp, top = 104.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(18.dp)
+                        ) {
+                            PlayerRoundButton(text = "≡", onClick = { subtitleDialogVisible = true })
+
+                            Box {
+                                PlayerRoundButton(
+                                    text = "${currentSpeed.cleanSpeed()}x",
+                                    onClick = { speedMenuExpanded = true }
+                                )
+                                DropdownMenu(
+                                    expanded = speedMenuExpanded,
+                                    onDismissRequest = { speedMenuExpanded = false }
+                                ) {
+                                    listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { spd ->
+                                        DropdownMenuItem(
+                                            text = { Text("${spd}x") },
+                                            onClick = {
+                                                speedMenuExpanded = false
+                                                currentSpeed = spd
+                                                playerManager.setPlaybackSpeed(spd)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            PlayerRoundButton(text = "▣", onClick = {
+                                currentResizeMode = when (currentResizeMode) {
+                                    AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                                    AspectRatioFrameLayout.RESIZE_MODE_FILL -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                                    else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                }
+                            })
+                            PlayerRoundButton(text = "⌂", onClick = { audioDialogVisible = true })
+                            PlayerRoundButton(text = "◒", onClick = { decoderDialogVisible = true })
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(
-                                onClick = {
-                                    if (playerManager.playPrevious()) {
-                                        currentIndex--
-                                        playerManager.updateIndex(currentIndex)
-                                    }
-                                },
-                                modifier = Modifier.size(56.dp)
+                                onClick = { playerManager.seekBackward(10000L) },
+                                modifier = Modifier.size(64.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                    contentDescription = "Previous",
+                                    contentDescription = "Seek back",
                                     tint = Color.White,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(48.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(32.dp))
+                            Spacer(modifier = Modifier.width(70.dp))
 
                             IconButton(
                                 onClick = { playerManager.togglePlayPause() },
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                modifier = Modifier.size(84.dp)
                             ) {
                                 if (isPlaying) {
                                     Text(
                                         text = "II",
                                         color = Color.White,
-                                        fontSize = 30.sp,
+                                        fontSize = 42.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 } else {
@@ -447,37 +448,31 @@ fun PlayerScreen(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play",
                                         tint = Color.White,
-                                        modifier = Modifier.size(48.dp)
+                                        modifier = Modifier.size(72.dp)
                                     )
                                 }
                             }
 
-                            Spacer(modifier = Modifier.width(32.dp))
+                            Spacer(modifier = Modifier.width(70.dp))
 
                             IconButton(
-                                onClick = {
-                                    if (playerManager.playNext()) {
-                                        currentIndex++
-                                        playerManager.updateIndex(currentIndex)
-                                    }
-                                },
-                                modifier = Modifier.size(56.dp)
+                                onClick = { playerManager.seekForward(10000L) },
+                                modifier = Modifier.size(64.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    contentDescription = "Next",
+                                    contentDescription = "Seek forward",
                                     tint = Color.White,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(48.dp)
                                 )
                             }
                         }
 
-                        // Bottom bar (Time, seek slider)
                         Column(
                             modifier = Modifier
+                                .align(Alignment.BottomCenter)
                                 .fillMaxWidth()
-                                .background(Color.Black.copy(alpha = 0.6f))
-                                .padding(16.dp)
+                                .padding(start = 28.dp, end = 28.dp, bottom = 96.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -486,27 +481,130 @@ fun PlayerScreen(
                                 Text(
                                     text = TimeUtils.formatDuration(currentPos),
                                     color = Color.White,
-                                    fontSize = 14.sp
+                                    fontSize = 20.sp
                                 )
+                                val remaining = if (duration > 0L) duration - currentPos else 0L
                                 Text(
-                                    text = TimeUtils.formatDuration(duration),
+                                    text = "-${TimeUtils.formatDuration(remaining)}",
                                     color = Color.White,
-                                    fontSize = 14.sp
+                                    fontSize = 20.sp
                                 )
                             }
-                            
+
                             Slider(
                                 value = if (duration > 0) currentPos.toFloat() / duration else 0f,
                                 onValueChange = { percent ->
-                                    val newPos = (percent * duration).toLong()
-                                    playerManager.exoPlayer?.seekTo(newPos)
+                                    playerManager.exoPlayer?.seekTo((percent * duration).toLong())
                                 },
                                 colors = SliderDefaults.colors(
-                                    thumbColor = DeharOrange,
-                                    activeTrackColor = DeharOrange,
-                                    inactiveTrackColor = Color.DarkGray
+                                    thumbColor = Color(0xFF4DB1FF),
+                                    activeTrackColor = Color(0xFF4DB1FF),
+                                    inactiveTrackColor = Color.Gray
                                 ),
                                 modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 24.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(74.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (playerManager.playPrevious()) {
+                                        currentIndex--
+                                        playerManager.updateIndex(currentIndex)
+                                    }
+                                },
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = "Previous",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { playerManager.togglePlayPause() },
+                                modifier = Modifier.size(80.dp)
+                            ) {
+                                if (isPlaying) {
+                                    Text(
+                                        text = "II",
+                                        color = Color.White,
+                                        fontSize = 42.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.PlayArrow,
+                                        contentDescription = "Play",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(72.dp)
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    if (playerManager.playNext()) {
+                                        currentIndex++
+                                        playerManager.updateIndex(currentIndex)
+                                    }
+                                },
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Next",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { isControlsLocked = true },
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = 34.dp, bottom = 28.dp)
+                                .size(58.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Lock controls",
+                                tint = Color.White,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 34.dp, bottom = 32.dp),
+                            horizontalArrangement = Arrangement.spacedBy(28.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            PlayerTextButton(
+                                text = "↔",
+                                onClick = {
+                                    currentResizeMode = when (currentResizeMode) {
+                                        AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                                        AspectRatioFrameLayout.RESIZE_MODE_FILL -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                                        else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                    }
+                                }
+                            )
+                            PlayerTextButton(
+                                text = "▣",
+                                onClick = {
+                                    currentResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                }
                             )
                         }
                     }
@@ -790,6 +888,31 @@ private fun PlayerTextButton(
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+@Composable
+private fun PlayerRoundButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(58.dp)
+            .background(Color.Black.copy(alpha = 0.48f), CircleShape)
+    ) {
+        TextButton(
+            onClick = onClick,
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier.matchParentSize()
+        ) {
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

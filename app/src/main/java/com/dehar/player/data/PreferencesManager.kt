@@ -73,6 +73,15 @@ class PreferencesManager(private val context: Context) {
         }.first()
     }
 
+    suspend fun getLastPositions(videoPaths: List<String>): Map<String, Long> {
+        val keysByPath = videoPaths.associateWith { path ->
+            longPreferencesKey(PREFIX_VIDEO_POSITION + sanitizeKey(path))
+        }
+        return context.dataStore.data.map { prefs ->
+            keysByPath.mapValues { (_, key) -> prefs[key] ?: 0L }
+        }.first()
+    }
+
     suspend fun setLastPosition(videoPath: String, position: Long) {
         val key = longPreferencesKey(PREFIX_VIDEO_POSITION + sanitizeKey(videoPath))
         context.dataStore.edit { prefs ->
