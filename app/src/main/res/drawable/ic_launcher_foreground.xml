@@ -3,15 +3,41 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Play button shape -->
+    
+    <!-- Subtle premium outer glowing circle (shadow/glow effect) -->
     <path
-        android:fillColor="#FF9800"
-        android:pathData="M38,30 L76,54 L38,78 Z" />
-    <!-- Modern outer sleek ring border -->
+        android:strokeColor="#15B388FF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,18 C73.88,18 90,34.12 90,54 C90,73.88 73.88,90 54,90 C34.12,90 18,73.88 18,54 C18,34.12 34.12,18 54,18 Z" />
+
+    <!-- Sleek outer ring border in pristine white -->
     <path
-        android:strokeColor="#FFB74D"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:pathData="M54,18 C73.88,18 90,34.12 90,54 C90,73.88 73.88,90 54,90 C34.12,90 18,73.88 18,54 C18,34.12 34.12,18 54,18 Z" />
+
+    <!-- Stylized Chevron Shadow (Left part of Play button) -->
+    <path
+        android:fillColor="#33B388FF"
+        android:pathData="M37,34 L57,56 L37,78 L45,56 Z" />
+
+    <!-- Stylized Triangle Shadow (Right part of Play button) -->
+    <path
+        android:fillColor="#33B388FF"
+        android:pathData="M63,47 L81,56 L63,65 Z" />
+
+    <!-- Stylized Chevron in Light Purple Theme (Left part of Play button) -->
+    <path
+        android:fillColor="#B388FF"
+        android:pathData="M36,32 L56,54 L36,76 L44,54 Z" />
+
+    <!-- Stylized Triangle in Pristine White (Right part of Play button) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62,45 L80,54 L62,63 Z" />
+
 </vector>

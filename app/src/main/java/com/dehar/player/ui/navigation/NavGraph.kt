@@ -15,11 +15,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dehar.player.data.PreferencesManager
 import com.dehar.player.data.VideoRepository
+import com.dehar.player.player.MusicPlaybackManager
 import com.dehar.player.ui.screens.FolderScreen
 import com.dehar.player.ui.screens.HomeScreen
 import com.dehar.player.ui.screens.LockScreen
 import com.dehar.player.ui.screens.ExternalPlayerScreen
 import com.dehar.player.ui.screens.PlayerScreen
+import com.dehar.player.ui.screens.MusicLibraryScreen
+import com.dehar.player.ui.screens.NowPlayingScreen
 
 @Composable
 fun DeharNavGraph(
@@ -30,6 +33,7 @@ fun DeharNavGraph(
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
     val videoRepository = remember { VideoRepository(context) }
+    val musicPlaybackManager = remember { MusicPlaybackManager(context) }
     
     var startDestination by remember { mutableStateOf<String?>(null) }
     
@@ -62,7 +66,8 @@ fun DeharNavGraph(
                 HomeScreen(
                     navController = navController,
                     videoRepository = videoRepository,
-                    preferencesManager = preferencesManager
+                    preferencesManager = preferencesManager,
+                    musicPlaybackManager = musicPlaybackManager
                 )
             }
 
@@ -85,7 +90,8 @@ fun DeharNavGraph(
                     folderPath = folderPath,
                     navController = navController,
                     videoRepository = videoRepository,
-                    preferencesManager = preferencesManager
+                    preferencesManager = preferencesManager,
+                    musicPlaybackManager = musicPlaybackManager
                 )
             }
             
@@ -104,6 +110,20 @@ fun DeharNavGraph(
                     navController = navController,
                     videoRepository = videoRepository,
                     preferencesManager = preferencesManager
+                )
+            }
+
+            composable(Routes.MUSIC_LIBRARY) {
+                MusicLibraryScreen(
+                    navController = navController,
+                    musicPlaybackManager = musicPlaybackManager
+                )
+            }
+
+            composable(Routes.NOW_PLAYING) {
+                NowPlayingScreen(
+                    navController = navController,
+                    musicPlaybackManager = musicPlaybackManager
                 )
             }
         }

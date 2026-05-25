@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,8 +38,16 @@ import com.dehar.player.data.FolderData
 import com.dehar.player.data.PreferencesManager
 import com.dehar.player.data.SortOrder
 import com.dehar.player.data.VideoRepository
+import com.dehar.player.data.FolderLayoutSettings
+import com.dehar.player.player.MusicPlaybackManager
 import com.dehar.player.ui.components.FolderItemCard
+import com.dehar.player.ui.components.FolderGridItemCard
+import com.dehar.player.ui.components.VideoItemCard
+import com.dehar.player.ui.components.VideoGridItemCard
+import com.dehar.player.ui.components.LayoutAndSortDialog
+import com.dehar.player.ui.components.MiniPlayer
 import com.dehar.player.ui.navigation.Routes
+import com.dehar.player.ui.theme.DeharAccent
 import com.dehar.player.ui.theme.DeharBlue
 import com.dehar.player.ui.theme.DeharUnplayedCyan
 import kotlinx.coroutines.launch
@@ -49,17 +58,20 @@ fun HomeScreen(
     navController: NavController,
     videoRepository: VideoRepository,
     preferencesManager: PreferencesManager,
+    musicPlaybackManager: MusicPlaybackManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
     var folders by remember { mutableStateOf<List<FolderData>>(emptyList()) }
+    var allVideos by remember { mutableStateOf<List<com.dehar.player.data.VideoData>>(emptyList()) }
     var resumeVideos by remember { mutableStateOf<List<FolderResume>>(emptyList()) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var sortOrder by remember { mutableStateOf(SortOrder.NAME_ASC) }
-    var sortMenuExpanded by remember { mutableStateOf(false) }
+    
+    var layoutSettings by remember { mutableStateOf(FolderLayoutSettings()) }
+    var layoutSortDialogVisible by remember { mutableStateOf(false) }
     
     var storagePermissionGranted by remember { mutableStateOf(false) }
 
@@ -75,8 +87,9 @@ fun HomeScreen(
         storagePermissionGranted = isGranted
         if (isGranted) {
             scope.launch {
-                sortOrder = preferencesManager.getSortOrder()
-                folders = videoRepository.getVideoFolders(sortOrder)
+                layoutSettings = preferencesManager.getLayoutSettings()
+                folders = videoRepository.getVideoFolders(layoutSettings.sortOrder)
+                allVideos = videoRepository.getAllVideos(layoutSettings.sortOrder)
                 resumeVideos = loadResumeVideos(folders, preferencesManager)
             }
         } else {
@@ -88,11 +101,20 @@ fun HomeScreen(
         val check = ContextCompat.checkSelfPermission(context, permissionToRequest)
         if (check == PackageManager.PERMISSION_GRANTED) {
             storagePermissionGranted = true
-            sortOrder = preferencesManager.getSortOrder()
-            folders = videoRepository.getVideoFolders(sortOrder)
+            layoutSettings = preferencesManager.getLayoutSettings()
+            folders = videoRepository.getVideoFolders(layoutSettings.sortOrder)
+            allVideos = videoRepository.getAllVideos(layoutSettings.sortOrder)
             resumeVideos = loadResumeVideos(folders, preferencesManager)
         } else {
             launcher.launch(permissionToRequest)
+        }
+    }
+
+    LaunchedEffect(storagePermissionGranted, layoutSettings) {
+        if (storagePermissionGranted) {
+            folders = videoRepository.getVideoFolders(layoutSettings.sortOrder)
+            allVideos = videoRepository.getAllVideos(layoutSettings.sortOrder)
+            resumeVideos = loadResumeVideos(folders, preferencesManager)
         }
     }
 
@@ -110,6 +132,17 @@ fun HomeScreen(
                 } else {
                     null
                 }
+            }
+        }
+    }
+
+    val filteredVideos = remember(allVideos, searchQuery) {
+        if (searchQuery.isEmpty()) {
+            allVideos
+        } else {
+            allVideos.filter {
+                it.displayName.contains(searchQuery, ignoreCase = true) ||
+                it.title.contains(searchQuery, ignoreCase = true)
             }
         }
     }
@@ -153,30 +186,12 @@ fun HomeScreen(
                         )
                     }
                     
-                    IconButton(onClick = { sortMenuExpanded = true }) {
+                    IconButton(onClick = { layoutSortDialogVisible = true }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "Sort Options",
+                            imageVector = if (layoutSettings.layoutType == "LIST") Icons.Default.GridView else Icons.AutoMirrored.Filled.List,
+                            contentDescription = "Layout and Sort Options",
                             tint = Color.White
                         )
-                        DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false }
-                        ) {
-                            SortOrder.values().forEach { order ->
-                                DropdownMenuItem(
-                                    text = { Text(order.name.replace("_", " ")) },
-                                    onClick = {
-                                        sortMenuExpanded = false
-                                        scope.launch {
-                                            preferencesManager.setSortOrder(order)
-                                            sortOrder = order
-                                            folders = videoRepository.getVideoFolders(sortOrder)
-                                        }
-                                    }
-                                )
-                            }
-                        }
                     }
 
                     IconButton(onClick = {
@@ -226,6 +241,20 @@ fun HomeScreen(
         },
         modifier = modifier
     ) { innerPadding ->
+        if (layoutSortDialogVisible) {
+            LayoutAndSortDialog(
+                initialSettings = layoutSettings,
+                onDismiss = { layoutSortDialogVisible = false },
+                onConfirm = { newSettings ->
+                    layoutSortDialogVisible = false
+                    layoutSettings = newSettings
+                    scope.launch {
+                        preferencesManager.setLayoutSettings(newSettings)
+                    }
+                }
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -262,7 +291,19 @@ fun HomeScreen(
                         Text("Grant Permission", color = Color.Black)
                     }
                 }
-            } else if (filteredFolders.isEmpty()) {
+            } else if (layoutSettings.viewMode == "FILES" && filteredVideos.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No videos found.",
+                        color = Color.Gray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else if (layoutSettings.viewMode != "FILES" && filteredFolders.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -287,7 +328,7 @@ fun HomeScreen(
                                 .padding(horizontal = 18.dp, vertical = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            HomeChip(icon = Icons.Filled.MusicNote, text = "Music")
+                            HomeChip(icon = Icons.Filled.MusicNote, text = "Music", onClick = { navController.navigate(Routes.MUSIC_LIBRARY) })
                             HomeChip(icon = Icons.Filled.PlayCircle, text = "Video")
                         }
                     }
@@ -305,15 +346,93 @@ fun HomeScreen(
                         }
                     }
 
-                    items(filteredFolders) { folder ->
-                        FolderItemCard(
-                            folder = folder,
-                            onClick = {
-                                navController.navigate(Routes.folder(folder.path))
+                    if (layoutSettings.viewMode == "FILES") {
+                        if (layoutSettings.layoutType == "GRID") {
+                            val chunkedVideos = filteredVideos.chunked(2)
+                            items(chunkedVideos) { rowItems ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    rowItems.forEach { video ->
+                                        val hasPlayed = resumeVideos.firstOrNull()?.video?.path == video.path
+                                        VideoGridItemCard(
+                                            video = video,
+                                            isPlayed = hasPlayed,
+                                            onClick = {
+                                                val originalIndex = allVideos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+                                                navController.navigate(Routes.player(originalIndex, video.folderPath))
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    if (rowItems.size < 2) {
+                                        repeat(2 - rowItems.size) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
                             }
-                        )
+                        } else {
+                            items(filteredVideos) { video ->
+                                val hasPlayed = resumeVideos.firstOrNull()?.video?.path == video.path
+                                VideoItemCard(
+                                    video = video,
+                                    isPlayed = hasPlayed,
+                                    onClick = {
+                                        val originalIndex = allVideos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+                                        navController.navigate(Routes.player(originalIndex, video.folderPath))
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        if (layoutSettings.layoutType == "GRID") {
+                            val chunkedFolders = filteredFolders.chunked(2)
+                            items(chunkedFolders) { rowItems ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    rowItems.forEach { folder ->
+                                        FolderGridItemCard(
+                                            folder = folder,
+                                            onClick = {
+                                                navController.navigate(Routes.folder(folder.path))
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    if (rowItems.size < 2) {
+                                        repeat(2 - rowItems.size) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            items(filteredFolders) { folder ->
+                                FolderItemCard(
+                                    folder = folder,
+                                    onClick = {
+                                        navController.navigate(Routes.folder(folder.path))
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
+            }
+
+            // Synced bottom MiniPlayer overlay
+            if (musicPlaybackManager.currentSong != null) {
+                MiniPlayer(
+                    musicPlaybackManager = musicPlaybackManager,
+                    onClick = { navController.navigate(Routes.NOW_PLAYING) },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 12.dp, start = 12.dp, end = 12.dp)
+                )
             }
         }
     }
@@ -346,9 +465,11 @@ private data class FolderResume(
 @Composable
 private fun HomeChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    text: String
+    text: String,
+    onClick: () -> Unit = {}
 ) {
     Surface(
+        onClick = onClick,
         color = Color(0xFF263544),
         shape = RoundedCornerShape(22.dp)
     ) {
@@ -380,10 +501,10 @@ private fun ContinuePlayingRow(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF4DA3FF), modifier = Modifier.size(30.dp))
+            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = DeharAccent, modifier = Modifier.size(30.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Continue playing", color = Color(0xFF9FCBFF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Continue playing", color = DeharAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 Text(item.video.displayName, color = Color.White, maxLines = 1, fontSize = 16.sp)
             }
         }

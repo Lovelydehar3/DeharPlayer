@@ -24,6 +24,16 @@ import com.dehar.player.data.VideoData
 import com.dehar.player.ui.theme.DeharSurface
 import com.dehar.player.ui.theme.DeharUnplayedCyan
 import com.dehar.player.utils.TimeUtils
+import android.graphics.Bitmap
+import android.os.Build
+import android.util.Size
+import android.provider.MediaStore
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun VideoItemCard(
@@ -32,6 +42,27 @@ fun VideoItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val thumbnailBitmap by produceState<Bitmap?>(initialValue = null, video.uri) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    context.contentResolver.loadThumbnail(video.uri, Size(252, 140), null)
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Video.Thumbnails.getThumbnail(
+                        context.contentResolver,
+                        video.id,
+                        MediaStore.Video.Thumbnails.MINI_KIND,
+                        null
+                    )
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -46,12 +77,21 @@ fun VideoItemCard(
                 .background(DeharSurface),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = video.uri,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
-            )
+            if (thumbnailBitmap != null) {
+                Image(
+                    bitmap = thumbnailBitmap!!.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            } else {
+                AsyncImage(
+                    model = video.uri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
 
             Box(
                 modifier = Modifier
@@ -144,6 +184,108 @@ fun VideoItemCard(
             contentDescription = "Video options",
             tint = Color(0xFFE8EDF3),
             modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+@Composable
+fun VideoGridItemCard(
+    video: VideoData,
+    isPlayed: Boolean = false,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val thumbnailBitmap by produceState<Bitmap?>(initialValue = null, video.uri) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    context.contentResolver.loadThumbnail(video.uri, Size(252, 140), null)
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Video.Thumbnails.getThumbnail(
+                        context.contentResolver,
+                        video.id,
+                        MediaStore.Video.Thumbnails.MINI_KIND,
+                        null
+                    )
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    val titleColor = if (isPlayed) Color(0xFFE8EDF3) else DeharUnplayedCyan
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.77f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(DeharSurface),
+            contentAlignment = Alignment.Center
+        ) {
+            if (thumbnailBitmap != null) {
+                Image(
+                    bitmap = thumbnailBitmap!!.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            } else {
+                AsyncImage(
+                    model = video.uri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.22f))
+            )
+
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Video Play",
+                tint = DeharUnplayedCyan,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(4.dp)
+                    .background(Color.Black.copy(alpha = 0.7f), shape = RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = TimeUtils.formatDuration(video.duration),
+                    color = Color.White,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = video.displayName,
+            color = titleColor,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
