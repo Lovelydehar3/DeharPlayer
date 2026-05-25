@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dehar.player.data.PreferencesManager
 import com.dehar.player.ui.theme.DeharBackground
-import com.dehar.player.ui.theme.DeharOrange
+import com.dehar.player.ui.theme.DeharBlue
 import com.dehar.player.ui.theme.DeharSurface
 import kotlinx.coroutines.launch
 
@@ -86,7 +86,7 @@ fun LockScreen(
                 text = "DEHAR PLAYER",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = DeharOrange,
+                color = DeharBlue,
                 letterSpacing = 4.sp
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -122,7 +122,7 @@ fun LockScreen(
                         modifier = Modifier
                             .size(16.dp)
                             .clip(CircleShape)
-                            .background(if (active) DeharOrange else DeharSurface)
+                            .background(if (active) DeharBlue else DeharSurface)
                     )
                 }
             }

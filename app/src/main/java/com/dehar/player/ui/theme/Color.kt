@@ -3,10 +3,10 @@ package com.dehar.player.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Primary brand colors
-val DeharOrange = Color(0xFFFF9800)
-val DeharOrangeDark = Color(0xFFF57C00)
-val DeharOrangeLight = Color(0xFFFFB74D)
-val DeharOrangeVariant = Color(0xFFFFAB40)
+val DeharBlue = Color(0xFF1E88E5)
+val DeharBlueDark = Color(0xFF1565C0)
+val DeharBlueLight = Color(0xFF90CAF9)
+val DeharBlueVariant = Color(0xFF4DA3FF)
 
 // Background & Surface
 val DeharBackground = Color(0xFF0F1621)

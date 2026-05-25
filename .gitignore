@@ -13,6 +13,7 @@ local.properties
 /app/build
 /app/release
 *.apk
+MX Player Pro.apk
 *.aab
 *.jks
 *.keystore

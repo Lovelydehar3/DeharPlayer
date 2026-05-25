@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.dehar.player"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.dehar.player"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 

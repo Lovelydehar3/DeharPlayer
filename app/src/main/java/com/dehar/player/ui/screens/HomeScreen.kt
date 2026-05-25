@@ -39,7 +39,7 @@ import com.dehar.player.data.SortOrder
 import com.dehar.player.data.VideoRepository
 import com.dehar.player.ui.components.FolderItemCard
 import com.dehar.player.ui.navigation.Routes
-import com.dehar.player.ui.theme.DeharOrange
+import com.dehar.player.ui.theme.DeharBlue
 import com.dehar.player.ui.theme.DeharUnplayedCyan
 import kotlinx.coroutines.launch
 
@@ -257,7 +257,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = { launcher.launch(permissionToRequest) },
-                        colors = ButtonDefaults.buttonColors(containerColor = DeharOrange)
+                        colors = ButtonDefaults.buttonColors(containerColor = DeharBlue)
                     ) {
                         Text("Grant Permission", color = Color.Black)
                     }

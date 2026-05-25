@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.media.AudioManager
 import android.net.Uri
-import android.widget.Toast
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -43,9 +42,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
-import com.dehar.player.data.PreferencesManager
-import com.dehar.player.data.VideoData
-import com.dehar.player.data.VideoRepository
 import com.dehar.player.player.PlayerManager
 import com.dehar.player.player.MediaTrackOption
 import com.dehar.player.ui.theme.*
@@ -55,12 +51,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PlayerScreen(
-    videoIndex: Int,
-    folderPath: String,
+fun ExternalPlayerScreen(
+    uri: Uri,
+    displayName: String,
     navController: NavController,
-    videoRepository: VideoRepository,
-    preferencesManager: PreferencesManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -68,32 +62,18 @@ fun PlayerScreen(
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
 
-    var videos by remember { mutableStateOf<List<VideoData>>(emptyList()) }
-    var currentIndex by remember { mutableIntStateOf(videoIndex) }
-    
     val playerManager = remember { PlayerManager(context).apply { initialize() } }
     var showControls by remember { mutableStateOf(true) }
     var isControlsLocked by remember { mutableStateOf(false) }
 
     // Gesture indicator states
-    var gestureIndicatorText by remember { mutableStateOf<String?>(null) }
-    var gestureIndicatorIcon by remember { mutableIntStateOf(0) } // 1 = Vol, 2 = Bright, 3 = Seek
     var sideIndicator by remember { mutableStateOf<SideIndicator?>(null) }
-
-    // Drag tracking
+    var isDraggingHorizontal by remember { mutableStateOf(false) }
     var dragStartPos by remember { mutableLongStateOf(0L) }
     var dragTargetPos by remember { mutableLongStateOf(0L) }
-    var isDraggingHorizontal by remember { mutableStateOf(false) }
-
-    // Playback resume states
-    var showResumePrompt by remember { mutableStateOf(false) }
-    var resumePosition by remember { mutableStateOf(0L) }
 
     // Speed & Aspect Ratio
     var speedMenuExpanded by remember { mutableStateOf(false) }
-    var audioDialogVisible by remember { mutableStateOf(false) }
-    var subtitleDialogVisible by remember { mutableStateOf(false) }
-    var decoderDialogVisible by remember { mutableStateOf(false) }
     var currentSpeed by remember { mutableFloatStateOf(1.0f) }
     var currentResizeMode by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
     var decoderMode by remember { mutableStateOf("HW decoder") }
@@ -102,6 +82,11 @@ fun PlayerScreen(
     var currentPos by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var isPlaying by remember { mutableStateOf(false) }
+
+    // Dialogs
+    var audioDialogVisible by remember { mutableStateOf(false) }
+    var subtitleDialogVisible by remember { mutableStateOf(false) }
+    var decoderDialogVisible by remember { mutableStateOf(false) }
 
     // Brightness/Volume tracking
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -130,9 +115,7 @@ fun PlayerScreen(
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         }
 
-        // Get videos
-        val sortOrder = preferencesManager.getSortOrder()
-        videos = videoRepository.getVideosInFolder(folderPath, sortOrder)
+        playerManager.setSingleMedia(uri)
     }
 
     // Release player on back
@@ -146,48 +129,17 @@ fun PlayerScreen(
                 val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
                 windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
             }
-
-            scope.launch {
-                val currentVid = playerManager.getCurrentVideo()
-                if (currentVid != null) {
-                    preferencesManager.setLastPosition(currentVid.path, playerManager.getCurrentPosition())
-                }
-                playerManager.release()
-            }
+            playerManager.release()
         }
     }
 
-    // Setup playlist once videos are loaded
-    LaunchedEffect(videos, currentIndex) {
-        if (videos.isNotEmpty() && currentIndex in videos.indices) {
-            if (playerManager.exoPlayer?.mediaItemCount != videos.size) {
-                playerManager.setPlaylist(videos, currentIndex)
-            }
-            
-            // Retrieve last position
-            val lastPos = preferencesManager.getLastPosition(videos[currentIndex].path)
-            
-            val currentMediaItemIndex = playerManager.exoPlayer?.currentMediaItemIndex ?: -1
-            if (currentMediaItemIndex != currentIndex) {
-                playerManager.playAt(currentIndex, lastPos)
-            }
-            
-            if (lastPos > 15_000L) {
-                resumePosition = lastPos
-                showResumePrompt = true
-                scope.launch {
-                    delay(5000)
-                    showResumePrompt = false
-                }
-            }
-            
-            // Track playback position
-            while (true) {
-                currentPos = playerManager.getCurrentPosition()
-                duration = playerManager.getDuration()
-                isPlaying = playerManager.isPlaying()
-                delay(500)
-            }
+    // Update position and duration regularly
+    LaunchedEffect(uri) {
+        while (true) {
+            currentPos = playerManager.getCurrentPosition()
+            duration = playerManager.getDuration()
+            isPlaying = playerManager.isPlaying()
+            delay(500)
         }
     }
 
@@ -233,21 +185,9 @@ fun PlayerScreen(
                                 when {
                                     x < width * 0.35f -> {
                                         playerManager.seekBackward(10000L)
-                                        gestureIndicatorText = "-10s"
-                                        gestureIndicatorIcon = 3
-                                        scope.launch {
-                                            delay(1000)
-                                            gestureIndicatorText = null
-                                        }
                                     }
                                     x > width * 0.65f -> {
                                         playerManager.seekForward(10000L)
-                                        gestureIndicatorText = "+10s"
-                                        gestureIndicatorIcon = 3
-                                        scope.launch {
-                                            delay(1000)
-                                            gestureIndicatorText = null
-                                        }
                                     }
                                     else -> {
                                         playerManager.togglePlayPause()
@@ -333,7 +273,7 @@ fun PlayerScreen(
                 }
         )
 
-        // Custom Overlay Controls (visible when controls shown and not seeking/swiping)
+        // Custom Overlay Controls
         AnimatedVisibility(
             visible = showControls && !isDraggingHorizontal && sideIndicator == null,
             enter = fadeIn(),
@@ -389,7 +329,7 @@ fun PlayerScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = videos.getOrNull(currentIndex)?.displayName ?: "",
+                                    text = displayName,
                                     color = Color.White,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
@@ -449,7 +389,7 @@ fun PlayerScreen(
                             }
                         }
 
-                        // 2. Horizontal Action Bar (Equalizer, Speed, AspectRatio, Audio, Rotation, Expand) - styled as grey circles matching MX Player Pro!
+                        // 2. Horizontal Action Bar (Equalizer, Speed, AspectRatio, Audio, Rotation, Expand)
                         Row(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
@@ -542,9 +482,8 @@ fun PlayerScreen(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .fillMaxWidth()
-                                .padding(bottom = 76.dp) // Placed cleanly above bottom buttons
+                                .padding(bottom = 76.dp)
                         ) {
-                            // Time codes row (exactly aligned with the start/end margins)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -569,7 +508,6 @@ fun PlayerScreen(
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            // Seekbar Slider (solid blue/cyan active track!)
                             val sliderValue = if (isDraggingHorizontal) dragTargetPos else currentPos
                             Slider(
                                 value = if (duration > 0) sliderValue.toFloat() / duration else 0f,
@@ -589,7 +527,7 @@ fun PlayerScreen(
                         }
 
                         // 4. Bottom Alignment Row of Controls
-                        // Bottom-Left Stack: Lock (padlock) and Rotation (screen rotate)
+                        // Bottom-Left Lock & Rotation
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
@@ -633,7 +571,7 @@ fun PlayerScreen(
                             }
                         }
 
-                        // Bottom-Center: Prev, Play/Pause, Next (NO grey circular background!)
+                        // Bottom-Center: Prev (seek backward 10s), Play/Pause, Next (seek forward 10s)
                         Row(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
@@ -643,16 +581,14 @@ fun PlayerScreen(
                         ) {
                             IconButton(
                                 onClick = {
-                                    if (playerManager.playPrevious()) {
-                                        currentIndex--
-                                        playerManager.updateIndex(currentIndex)
-                                    }
+                                    playerManager.seekBackward(10000L)
+                                    Toast.makeText(context, "Rewind 10s", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SkipPrevious,
-                                    contentDescription = "Previous",
+                                    contentDescription = "Rewind",
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
@@ -672,23 +608,21 @@ fun PlayerScreen(
 
                             IconButton(
                                 onClick = {
-                                    if (playerManager.playNext()) {
-                                        currentIndex++
-                                        playerManager.updateIndex(currentIndex)
-                                    }
+                                    playerManager.seekForward(10000L)
+                                    Toast.makeText(context, "Fast Forward 10s", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SkipNext,
-                                    contentDescription = "Next",
+                                    contentDescription = "Fast Forward",
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
                         }
 
-                        // Bottom-Right Stack: Aspect Ratio (Screen size fit) and PiP (picture-in-picture)
+                        // Bottom-Right Aspect Ratio & PiP
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -796,58 +730,43 @@ fun PlayerScreen(
             }
         }
 
-        // Playback Resume Prompt
+        sideIndicator?.let { indicator ->
+            VerticalSideIndicator(
+                indicator = indicator,
+                modifier = Modifier.align(
+                    if (indicator.side == IndicatorSide.Left) Alignment.CenterStart else Alignment.CenterEnd
+                )
+            )
+        }
+
+        // Center Seek Indicator
         AnimatedVisibility(
-            visible = showResumePrompt,
+            visible = isDraggingHorizontal,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 28.dp, bottom = 170.dp)
+            modifier = Modifier.align(Alignment.Center)
         ) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.wrapContentSize()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    IconButton(
-                        onClick = { showResumePrompt = false },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dismiss resume prompt",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Continue from where you stopped.",
-                        color = Color.White,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    TextButton(
-                        onClick = {
-                            showResumePrompt = false
-                            playerManager.exoPlayer?.seekTo(0L)
-                        },
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        Text(
-                            text = "START OVER",
-                            color = Color(0xFF4DA3FF),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                Text(
+                    text = TimeUtils.formatDuration(dragTargetPos),
+                    color = Color.White,
+                    fontSize = 72.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val delta = dragTargetPos - dragStartPos
+                val sign = if (delta >= 0) "+" else "-"
+                val absDelta = kotlin.math.abs(delta)
+                val deltaStr = "[$sign${TimeUtils.formatDuration(absDelta)}]"
+                Text(
+                    text = deltaStr,
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 
@@ -889,79 +808,56 @@ fun PlayerScreen(
                 onDismiss = { decoderDialogVisible = false }
             )
         }
+    }
+}
 
-        sideIndicator?.let { indicator ->
-            VerticalSideIndicator(
-                indicator = indicator,
-                modifier = Modifier.align(
-                    if (indicator.side == IndicatorSide.Left) Alignment.CenterStart else Alignment.CenterEnd
-                )
-            )
-        }
+private fun Float.cleanSpeed(): String {
+    return if (this % 1f == 0f) this.toInt().toString() else this.toString()
+}
 
-        // Center Seek Indicator (Horizontal dragging)
-        AnimatedVisibility(
-            visible = isDraggingHorizontal,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = TimeUtils.formatDuration(dragTargetPos),
-                    color = Color.White,
-                    fontSize = 72.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                val delta = dragTargetPos - dragStartPos
-                val sign = if (delta >= 0) "+" else "-"
-                val absDelta = kotlin.math.abs(delta)
-                val deltaStr = "[$sign${TimeUtils.formatDuration(absDelta)}]"
-                Text(
-                    text = deltaStr,
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
 
-        // Double-tap Skip Indicator
-        AnimatedVisibility(
-            visible = gestureIndicatorText != null && !isDraggingHorizontal && sideIndicator == null,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center)
+@Composable
+private fun VerticalSideIndicator(
+    indicator: SideIndicator,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(horizontal = 22.dp)
+            .width(44.dp)
+            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = indicator.displayValue,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .height(130.dp)
+                .width(4.dp)
+                .background(Color(0xFF555555), RoundedCornerShape(2.dp)),
+            contentAlignment = Alignment.BottomCenter
         ) {
             Box(
                 modifier = Modifier
-                    .background(Color.Black.copy(alpha = 0.8f), shape = MaterialTheme.shapes.medium)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Indicator",
-                        tint = DeharBlue,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = gestureIndicatorText ?: "",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                    .fillMaxWidth()
+                    .fillMaxHeight((indicator.value / 100f).coerceIn(0f, 1f))
+                    .background(Color(0xFF4DA3FF), RoundedCornerShape(2.dp))
+            )
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Icon(
+            imageVector = indicator.icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 
@@ -1077,66 +973,6 @@ private fun DecoderChoiceDialog(
     )
 }
 
-private fun Float.cleanSpeed(): String {
-    return if (this % 1f == 0f) this.toInt().toString() else this.toString()
-}
-
-enum class IndicatorSide {
-    Left, Right
-}
-
-data class SideIndicator(
-    val side: IndicatorSide,
-    val value: Int,
-    val displayValue: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
-)
-
-@Composable
-private fun VerticalSideIndicator(
-    indicator: SideIndicator,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .padding(horizontal = 22.dp)
-            .width(44.dp)
-            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = indicator.displayValue,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .height(130.dp)
-                .width(4.dp)
-                .background(Color(0xFF555555), RoundedCornerShape(2.dp)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight((indicator.value / 100f).coerceIn(0f, 1f))
-                    .background(Color(0xFF4DA3FF), RoundedCornerShape(2.dp))
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Icon(
-            imageVector = indicator.icon,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(20.dp)
-        )
-    }
-}
-
 @Composable
 private fun PlayerActionCircleButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1178,4 +1014,3 @@ private fun PlayerActionCircleTextButton(
         )
     }
 }
-

@@ -26,6 +26,12 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
+if not defined JAVA_HOME (
+    if exist "E:\Dehar Player update\jdk17\jdk-17.0.19+10" (
+        set "JAVA_HOME=E:\Dehar Player update\jdk17\jdk-17.0.19+10"
+    )
+)
+
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused

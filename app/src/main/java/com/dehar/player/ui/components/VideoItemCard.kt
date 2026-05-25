@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.dehar.player.data.VideoData
-import com.dehar.player.ui.theme.DeharOrange
 import com.dehar.player.ui.theme.DeharSurface
 import com.dehar.player.ui.theme.DeharUnplayedCyan
 import com.dehar.player.utils.TimeUtils

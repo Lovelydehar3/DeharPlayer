@@ -10,11 +10,11 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DeharDarkColorScheme = darkColorScheme(
-    primary = DeharOrange,
+    primary = DeharBlue,
     onPrimary = DeharOnPrimary,
-    primaryContainer = DeharOrangeDark,
-    onPrimaryContainer = DeharOrangeLight,
-    secondary = DeharOrangeVariant,
+    primaryContainer = DeharBlueDark,
+    onPrimaryContainer = DeharBlueLight,
+    secondary = DeharBlueVariant,
     background = DeharBackground,
     onBackground = DeharOnBackground,
     surface = DeharSurface,
