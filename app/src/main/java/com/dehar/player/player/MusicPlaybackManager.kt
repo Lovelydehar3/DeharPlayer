@@ -26,7 +26,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Collections
+
+import com.dehar.player.feature.lyrics.LrcParser
+import com.dehar.player.feature.lyrics.LrcLine
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
 
 @OptIn(UnstableApi::class)
 class MusicPlaybackManager(private val context: Context) {
@@ -35,10 +43,13 @@ class MusicPlaybackManager(private val context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressTrackingJob: Job? = null
     private var sleepTimerJob: Job? = null
+    private var lyricsJob: Job? = null
 
-    // Playback state observables
-    var isPlaying by mutableStateOf(false)
-    var currentSong by mutableStateOf<SongData?>(null)
+    // Lyrics state
+    var lyricsLines by mutableStateOf<List<LrcLine>>(emptyList())
+    var currentLyricsLine by mutableIntStateOf(-1)
+    var lyricsLoading by mutableStateOf(false)
+    var lyricsNotFound by mutableStateOf(false)
     var playbackPosition by mutableLongStateOf(0L)
     var playbackDuration by mutableLongStateOf(0L)
     var playbackBuffered by mutableLongStateOf(0L)
@@ -327,6 +338,63 @@ class MusicPlaybackManager(private val context: Context) {
         sleepTimerRemainingSec = 0
     }
 
+    // --- LYRICS SYSTEM ---
+
+    fun loadLyrics(song: SongData) {
+        lyricsJob?.cancel()
+        lyricsJob = scope.launch {
+            lyricsLoading = true
+            lyricsNotFound = false
+            lyricsLines = emptyList()
+            
+            // Step 1: Local .lrc file check
+            val lrcFile = File(song.path).let { 
+                File(it.parent, "${it.nameWithoutExtension}.lrc") 
+            }
+            if (lrcFile.exists()) {
+                lyricsLines = LrcParser.parse(lrcFile.readText())
+                lyricsLoading = false
+                return@launch
+            }
+            
+            // Step 2: Embedded lyrics
+            song.embeddedLyrics?.let { embedded ->
+                lyricsLines = if (embedded.contains("["))
+                    LrcParser.parse(embedded)
+                else embedded.lines().mapIndexed { i, l -> LrcLine(i * 3000L, l) }
+                lyricsLoading = false
+                return@launch
+            }
+            
+            // Step 3: lrclib.net API
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    val url = "https://lrclib.net/api/get?artist_name=${java.net.URLEncoder.encode(song.artist, "UTF-8")}&track_name=${java.net.URLEncoder.encode(song.title, "UTF-8")}"
+                    val conn = URL(url).openConnection() as HttpURLConnection
+                    conn.setRequestProperty("User-Agent", "DeharPlayer/1.0")
+                    conn.inputStream.bufferedReader().readText().also { conn.disconnect() }
+                }
+                val json = JSONObject(response)
+                val synced = json.optString("syncedLyrics")
+                val plain = json.optString("plainLyrics")
+                when {
+                    synced.isNotEmpty() -> lyricsLines = LrcParser.parse(synced)
+                    plain.isNotEmpty() -> lyricsLines = plain.lines().mapIndexed { i, l -> LrcLine(i * 3000L, l) }
+                    else -> lyricsNotFound = true
+                }
+            } catch (e: Exception) {
+                lyricsNotFound = true
+            }
+            lyricsLoading = false
+        }
+    }
+
+    private fun updateLyricsPosition(positionMs: Long) {
+        if (lyricsLines.isNotEmpty()) {
+            currentLyricsLine = lyricsLines.indexOfLast { it.timestampMs <= positionMs }
+        }
+    }
+
     // --- PROGRESS LOOP ---
 
     private fun startProgressTracking() {
@@ -339,6 +407,7 @@ class MusicPlaybackManager(private val context: Context) {
                         val dur = player.duration
                         playbackDuration = if (dur == C.TIME_UNSET) 0L else dur
                         playbackBuffered = player.bufferedPosition
+                        updateLyricsPosition(playbackPosition)
                     }
                 }
                 delay(400)

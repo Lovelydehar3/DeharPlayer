@@ -86,6 +86,7 @@ fun ExternalPlayerScreen(
     val playerManager = remember { PlayerManager(context).apply { initialize() } }
     var showControls by remember { mutableStateOf(true) }
     var isControlsLocked by remember { mutableStateOf(false) }
+    var showQuickActions by remember { mutableStateOf(false) }
 
     // Gesture indicator states
     var sideIndicator by remember { mutableStateOf<SideIndicator?>(null) }
@@ -612,6 +613,17 @@ fun ExternalPlayerScreen(
                                     )
                                 }
                                 IconButton(
+                                    onClick = { showQuickActions = !showQuickActions },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Widgets,
+                                        contentDescription = "Quick Tools",
+                                        tint = if (showQuickActions) DeharAccent else Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                IconButton(
                                     onClick = { showRightSidePanel = true },
                                     modifier = Modifier.size(32.dp)
                                 ) {
@@ -626,235 +638,242 @@ fun ExternalPlayerScreen(
                         }
 
                         // 2. Horizontal Customizable Scrollable Action Bar (LazyRow - Screenshot 1 style)
-                        LazyRow(
+                        AnimatedVisibility(
+                            visible = showQuickActions,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .fillMaxWidth()
-                                .padding(top = 64.dp),
-                            contentPadding = PaddingValues(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(top = 64.dp)
                         ) {
-                            // Night Mode
-                            if (enabledShortcuts.contains("Night Mode")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.NightsStay,
-                                        label = "Night Mode",
-                                        isActive = isNightModeActive,
-                                        onClick = {
-                                            isNightModeActive = !isNightModeActive
-                                            val msg = if (isNightModeActive) "Night Mode (Eye Comfort) Enabled" else "Night Mode Disabled"
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                }
-                            }
-
-                            // Customize
-                            if (enabledShortcuts.contains("Customize")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.Edit,
-                                        label = "Customize",
-                                        onClick = { showCustomizeDialog = true }
-                                    )
-                                }
-                            }
-
-                            // Shuffle
-                            if (enabledShortcuts.contains("Shuffle")) {
-                                item {
-                                    val isShuffle = playerManager.exoPlayer?.shuffleModeEnabled == true
-                                    CircularActionItem(
-                                        icon = Icons.Default.Shuffle,
-                                        label = "Shuffle",
-                                        isActive = isShuffle,
-                                        onClick = {
-                                            val nextShuffle = !isShuffle
-                                            playerManager.exoPlayer?.shuffleModeEnabled = nextShuffle
-                                            val msg = if (nextShuffle) "Shuffle Mode ON" else "Shuffle Mode OFF"
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                }
-                            }
-
-                            // Loop
-                            if (enabledShortcuts.contains("Loop")) {
-                                item {
-                                    val repeatMode = playerManager.exoPlayer?.repeatMode ?: Player.REPEAT_MODE_OFF
-                                    val repeatLabel = when (repeatMode) {
-                                        Player.REPEAT_MODE_ONE -> "Loop: Single"
-                                        Player.REPEAT_MODE_ALL -> "Loop: All"
-                                        else -> "Loop: Off"
-                                    }
-                                    CircularActionItem(
-                                        icon = Icons.Default.Repeat,
-                                        label = repeatLabel,
-                                        isActive = repeatMode != Player.REPEAT_MODE_OFF,
-                                        onClick = {
-                                            val nextMode = when (repeatMode) {
-                                                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ONE
-                                                Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_ALL
-                                                else -> Player.REPEAT_MODE_OFF
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Night Mode
+                                if (enabledShortcuts.contains("Night Mode")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.NightsStay,
+                                            label = "Night Mode",
+                                            isActive = isNightModeActive,
+                                            onClick = {
+                                                isNightModeActive = !isNightModeActive
+                                                val msg = if (isNightModeActive) "Night Mode (Eye Comfort) Enabled" else "Night Mode Disabled"
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                             }
-                                            playerManager.exoPlayer?.repeatMode = nextMode
-                                            val msg = when (nextMode) {
-                                                Player.REPEAT_MODE_ONE -> "Repeat Single Track ON"
-                                                Player.REPEAT_MODE_ALL -> "Repeat All Tracks ON"
-                                                else -> "Repeat Modes OFF"
+                                        )
+                                    }
+                                }
+
+                                // Customize
+                                if (enabledShortcuts.contains("Customize")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.Edit,
+                                            label = "Customize",
+                                            onClick = { showCustomizeDialog = true }
+                                        )
+                                    }
+                                }
+
+                                // Shuffle
+                                if (enabledShortcuts.contains("Shuffle")) {
+                                    item {
+                                        val isShuffle = playerManager.exoPlayer?.shuffleModeEnabled == true
+                                        CircularActionItem(
+                                            icon = Icons.Default.Shuffle,
+                                            label = "Shuffle",
+                                            isActive = isShuffle,
+                                            onClick = {
+                                                val nextShuffle = !isShuffle
+                                                playerManager.exoPlayer?.shuffleModeEnabled = nextShuffle
+                                                val msg = if (nextShuffle) "Shuffle Mode ON" else "Shuffle Mode OFF"
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                             }
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                }
-                            }
-
-                            // Mute
-                            if (enabledShortcuts.contains("Mute")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                                        label = "Mute",
-                                        isActive = isMuted,
-                                        onClick = {
-                                            isMuted = !isMuted
-                                            val msg = if (isMuted) "Mute ON" else "Mute OFF"
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                }
-                            }
-
-                            // Sleep Timer
-                            if (enabledShortcuts.contains("Sleep Timer")) {
-                                item {
-                                    val isTimerActive = sleepTimerRemainingSec > 0
-                                    val timerLabel = if (isTimerActive) {
-                                        val mins = sleepTimerRemainingSec / 60
-                                        val secs = sleepTimerRemainingSec % 60
-                                        String.format("%02d:%02d", mins, secs)
-                                    } else {
-                                        "Sleep Timer"
+                                        )
                                     }
-                                    CircularActionItem(
-                                        icon = Icons.Default.Timer,
-                                        label = timerLabel,
-                                        isActive = isTimerActive,
-                                        onClick = { showSleepTimerDialog = true }
-                                    )
                                 }
-                            }
 
-                            // A-B Repeat
-                            if (enabledShortcuts.contains("A - B Repeat")) {
-                                item {
-                                    val isABActive = pointA != null || pointB != null
-                                    val abLabel = when {
-                                        pointA != null && pointB != null -> "A-B Looping"
-                                        pointA != null -> "Set Point B"
-                                        else -> "A-B Repeat"
-                                    }
-                                    CircularActionItem(
-                                        icon = Icons.Default.KeyboardTab,
-                                        label = abLabel,
-                                        isActive = isABActive,
-                                        onClick = {
-                                            if (pointA == null) {
-                                                pointA = currentPos
-                                                Toast.makeText(context, "Point A set at ${TimeUtils.formatDuration(currentPos)}", Toast.LENGTH_SHORT).show()
-                                            } else if (pointB == null) {
-                                                if (currentPos > pointA!!) {
-                                                    pointB = currentPos
-                                                    Toast.makeText(context, "Point B set at ${TimeUtils.formatDuration(currentPos)}. Loop started.", Toast.LENGTH_SHORT).show()
-                                                } else {
-                                                    Toast.makeText(context, "Point B must be after Point A", Toast.LENGTH_SHORT).show()
+                                // Loop
+                                if (enabledShortcuts.contains("Loop")) {
+                                    item {
+                                        val repeatMode = playerManager.exoPlayer?.repeatMode ?: Player.REPEAT_MODE_OFF
+                                        val repeatLabel = when (repeatMode) {
+                                            Player.REPEAT_MODE_ONE -> "Loop: Single"
+                                            Player.REPEAT_MODE_ALL -> "Loop: All"
+                                            else -> "Loop: Off"
+                                        }
+                                        CircularActionItem(
+                                            icon = Icons.Default.Repeat,
+                                            label = repeatLabel,
+                                            isActive = repeatMode != Player.REPEAT_MODE_OFF,
+                                            onClick = {
+                                                val nextMode = when (repeatMode) {
+                                                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ONE
+                                                    Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_ALL
+                                                    else -> Player.REPEAT_MODE_OFF
                                                 }
-                                            } else {
-                                                pointA = null
-                                                pointB = null
-                                                Toast.makeText(context, "A-B Repeat Cleared", Toast.LENGTH_SHORT).show()
+                                                playerManager.exoPlayer?.repeatMode = nextMode
+                                                val msg = when (nextMode) {
+                                                    Player.REPEAT_MODE_ONE -> "Repeat Single Track ON"
+                                                    Player.REPEAT_MODE_ALL -> "Repeat All Tracks ON"
+                                                    else -> "Repeat Modes OFF"
+                                                }
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
-                            }
 
-                            // Equalizer
-                            if (enabledShortcuts.contains("Equalizer")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.Tune,
-                                        label = "Equalizer",
-                                        onClick = { showEqualizerDialog = true }
-                                    )
-                                }
-                            }
-
-                            // Speed
-                            if (enabledShortcuts.contains("Speed")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.Speed,
-                                        label = "Speed: ${currentSpeed.cleanSpeed()}X",
-                                        isActive = currentSpeed != 1.0f,
-                                        onClick = { speedMenuExpanded = true }
-                                    )
-                                }
-                            }
-
-                            // Screenshot
-                            if (enabledShortcuts.contains("Screenshot")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.PhotoCamera,
-                                        label = "Screenshot",
-                                        onClick = {
-                                            showScreenshotFlash = true
-                                            scope.launch {
-                                                delay(150)
-                                                showScreenshotFlash = false
-                                                Toast.makeText(context, "Screenshot saved to Pictures/DeharPlayer_${System.currentTimeMillis()}.png", Toast.LENGTH_LONG).show()
+                                // Mute
+                                if (enabledShortcuts.contains("Mute")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                            label = "Mute",
+                                            isActive = isMuted,
+                                            onClick = {
+                                                isMuted = !isMuted
+                                                val msg = if (isMuted) "Mute ON" else "Mute OFF"
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
-                            }
 
-                            // Background Play
-                            if (enabledShortcuts.contains("Background Play")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.Headphones,
-                                        label = "Background Play",
-                                        isActive = backgroundPlayEnabled,
-                                        onClick = {
-                                            backgroundPlayEnabled = !backgroundPlayEnabled
-                                            val msg = if (backgroundPlayEnabled) "Background play enabled" else "Background play disabled"
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                // Sleep Timer
+                                if (enabledShortcuts.contains("Sleep Timer")) {
+                                    item {
+                                        val isTimerActive = sleepTimerRemainingSec > 0
+                                        val timerLabel = if (isTimerActive) {
+                                            val mins = sleepTimerRemainingSec / 60
+                                            val secs = sleepTimerRemainingSec % 60
+                                            String.format("%02d:%02d", mins, secs)
+                                        } else {
+                                            "Sleep Timer"
                                         }
-                                    )
+                                        CircularActionItem(
+                                            icon = Icons.Default.Timer,
+                                            label = timerLabel,
+                                            isActive = isTimerActive,
+                                            onClick = { showSleepTimerDialog = true }
+                                        )
+                                    }
                                 }
-                            }
 
-                            // Rotation
-                            if (enabledShortcuts.contains("Rotation")) {
-                                item {
-                                    CircularActionItem(
-                                        icon = Icons.Default.ScreenRotation,
-                                        label = "Rotation",
-                                        onClick = {
-                                            val isPortrait = activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                                            activity?.requestedOrientation = if (isPortrait) {
-                                                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                                            } else {
-                                                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                // A-B Repeat
+                                if (enabledShortcuts.contains("A - B Repeat")) {
+                                    item {
+                                        val isABActive = pointA != null || pointB != null
+                                        val abLabel = when {
+                                            pointA != null && pointB != null -> "A-B Looping"
+                                            pointA != null -> "Set Point B"
+                                            else -> "A-B Repeat"
+                                        }
+                                        CircularActionItem(
+                                            icon = Icons.Default.KeyboardTab,
+                                            label = abLabel,
+                                            isActive = isABActive,
+                                            onClick = {
+                                                if (pointA == null) {
+                                                    pointA = currentPos
+                                                    Toast.makeText(context, "Point A set at ${TimeUtils.formatDuration(currentPos)}", Toast.LENGTH_SHORT).show()
+                                                } else if (pointB == null) {
+                                                    if (currentPos > pointA!!) {
+                                                        pointB = currentPos
+                                                        Toast.makeText(context, "Point B set at ${TimeUtils.formatDuration(currentPos)}. Loop started.", Toast.LENGTH_SHORT).show()
+                                                    } else {
+                                                        Toast.makeText(context, "Point B must be after Point A", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } else {
+                                                    pointA = null
+                                                    pointB = null
+                                                    Toast.makeText(context, "A-B Repeat Cleared", Toast.LENGTH_SHORT).show()
+                                                }
                                             }
-                                            val orientationName = if (isPortrait) "Landscape Mode" else "Portrait Mode"
-                                            Toast.makeText(context, orientationName, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
+                                        )
+                                    }
+                                }
+
+                                // Equalizer
+                                if (enabledShortcuts.contains("Equalizer")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.Tune,
+                                            label = "Equalizer",
+                                            onClick = { showEqualizerDialog = true }
+                                        )
+                                    }
+                                }
+
+                                // Speed
+                                if (enabledShortcuts.contains("Speed")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.Speed,
+                                            label = "Speed: ${currentSpeed.cleanSpeed()}X",
+                                            isActive = currentSpeed != 1.0f,
+                                            onClick = { speedMenuExpanded = true }
+                                        )
+                                    }
+                                }
+
+                                // Screenshot
+                                if (enabledShortcuts.contains("Screenshot")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.PhotoCamera,
+                                            label = "Screenshot",
+                                            onClick = {
+                                                showScreenshotFlash = true
+                                                scope.launch {
+                                                    delay(150)
+                                                    showScreenshotFlash = false
+                                                    Toast.makeText(context, "Screenshot saved to Pictures/DeharPlayer_${System.currentTimeMillis()}.png", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+
+                                // Background Play
+                                if (enabledShortcuts.contains("Background Play")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.Headphones,
+                                            label = "Background Play",
+                                            isActive = backgroundPlayEnabled,
+                                            onClick = {
+                                                backgroundPlayEnabled = !backgroundPlayEnabled
+                                                val msg = if (backgroundPlayEnabled) "Background play enabled" else "Background play disabled"
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
+                                    }
+                                }
+
+                                // Rotation
+                                if (enabledShortcuts.contains("Rotation")) {
+                                    item {
+                                        CircularActionItem(
+                                            icon = Icons.Default.ScreenRotation,
+                                            label = "Rotation",
+                                            onClick = {
+                                                val isPortrait = activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                                activity?.requestedOrientation = if (isPortrait) {
+                                                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                                                } else {
+                                                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                                }
+                                                val orientationName = if (isPortrait) "Landscape Mode" else "Portrait Mode"
+                                                Toast.makeText(context, orientationName, Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1919,12 +1938,12 @@ private fun CircularActionItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .width(80.dp)
+            .width(72.dp)
             .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
-                .size(54.dp)
+                .size(42.dp)
                 .background(
                     if (isActive) DeharAccent else Color.White.copy(alpha = 0.12f),
                     CircleShape
@@ -1935,14 +1954,14 @@ private fun CircularActionItem(
                 imageVector = icon,
                 contentDescription = label,
                 tint = if (isActive) Color.Black else Color.White,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             color = Color.White,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )

@@ -6,9 +6,34 @@ import android.net.Uri
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.File
 
 class MusicRepository(private val context: Context) {
+
+    fun getGenres(): Flow<List<GenreItem>> = flow {
+        val genres = mutableMapOf<String, Int>()
+        val cursor = context.contentResolver.query(
+            MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.Audio.Genres._ID, MediaStore.Audio.Genres.NAME),
+            null, null, MediaStore.Audio.Genres.NAME + " ASC"
+        )
+        cursor?.use {
+            while (it.moveToNext()) {
+                val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Genres.NAME)) ?: continue
+                val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Genres._ID))
+                // Count songs for this genre
+                val countCursor = context.contentResolver.query(
+                    MediaStore.Audio.Genres.Members.getContentUri("external", id),
+                    arrayOf(MediaStore.Audio.Media._ID), null, null, null
+                )
+                genres[name] = countCursor?.count ?: 0
+                countCursor?.close()
+            }
+        }
+        emit(genres.map { (name, count) -> GenreItem(name, count) })
+    }
 
     suspend fun getSongs(sortOrder: SortOrder = SortOrder.NAME_ASC): List<SongData> = withContext(Dispatchers.IO) {
         val songs = mutableListOf<SongData>()
@@ -26,8 +51,8 @@ class MusicRepository(private val context: Context) {
             MediaStore.Audio.Media.TRACK
         )
 
-        // Only load audio files that are marked as music
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 15000"
+        // Broader query to include all standard audio tracks (Downloaded tracks, WhatsApp/Telegram audio, etc.) and filter out short system tones
+        val selection = "${MediaStore.Audio.Media.DURATION} >= 10000 AND ${MediaStore.Audio.Media.IS_NOTIFICATION} = 0 AND ${MediaStore.Audio.Media.IS_ALARM} = 0 AND ${MediaStore.Audio.Media.IS_RINGTONE} = 0"
         
         val sortOrderString = when (sortOrder) {
             SortOrder.NAME_ASC -> "${MediaStore.Audio.Media.TITLE} ASC"
@@ -69,8 +94,8 @@ class MusicRepository(private val context: Context) {
                     val dateAdded = cursor.getLong(dateCol)
                     val trackNumber = cursor.getInt(trackCol)
 
-                    // Ensure file actually exists in storage
-                    if (path.isNotEmpty() && File(path).exists()) {
+                    // Safe verification for scoped storage (File.exists() fails on Android 10+ for media paths, so we trust MediaStore database entry)
+                    if (path.isNotEmpty()) {
                         val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id).toString()
                         songs.add(
                             SongData(

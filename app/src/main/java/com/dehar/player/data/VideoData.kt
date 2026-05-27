@@ -13,6 +13,9 @@ data class VideoData(
     val width: Int,
     val height: Int,
     val dateAdded: Long,   // Unix timestamp seconds
-    val folderName: String,
-    val folderPath: String
-)
+    val folderName: String = "",
+    val folderPath: String = "",
+    val isFavorite: Boolean = false,
+    val playCount: Int = 0
+    )
+

@@ -12,8 +12,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.dehar.player.data.VideoData
 
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import com.dehar.player.data.PreferencesManager
+
 @OptIn(UnstableApi::class)
-class PlayerManager(private val context: Context) {
+class PlayerManager(private val context: Context, private val preferencesManager: PreferencesManager) {
     var exoPlayer: ExoPlayer? = null
         private set
 
@@ -27,7 +30,18 @@ class PlayerManager(private val context: Context) {
                 .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                 .build()
 
-            exoPlayer = ExoPlayer.Builder(context)
+            val renderersFactory = DefaultRenderersFactory(context).apply {
+                setExtensionRendererMode(
+                    when (preferencesManager.decoderMode) {
+                        "FFMPEG" -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                        "HARDWARE" -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+                        else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                    }
+                )
+                setEnableDecoderFallback(true)
+            }
+
+            exoPlayer = ExoPlayer.Builder(context, renderersFactory)
                 .build()
                 .apply {
                     setAudioAttributes(audioAttributes, true)
@@ -66,15 +80,29 @@ class PlayerManager(private val context: Context) {
         playlist = emptyList()
         currentIndex = -1
 
+        val mimeType = if (uri.scheme == "content") {
+            try {
+                context.contentResolver.getType(uri)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
         exoPlayer?.let { player ->
             player.stop()
             player.clearMediaItems()
-            player.setMediaItem(
-                MediaItem.Builder()
-                    .setUri(uri)
-                    .setMediaId(mediaId)
-                    .build()
-            )
+            val mediaItem = MediaItem.Builder()
+                .setUri(uri)
+                .setMediaId(mediaId)
+                .apply {
+                    if (mimeType != null) {
+                        setMimeType(mimeType)
+                    }
+                }
+                .build()
+            player.setMediaItem(mediaItem)
             player.prepare()
             player.play()
         }

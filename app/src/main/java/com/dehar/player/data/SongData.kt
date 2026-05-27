@@ -11,8 +11,14 @@ data class SongData(
     val path: String,
     val dateAdded: Long,
     val trackNumber: Int = 0,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val embeddedLyrics: String? = null
 ) {
     val displayName: String
         get() = title.ifBlank { "Unknown Song" }
 }
+
+data class GenreItem(
+    val name: String,
+    val songCount: Int
+)

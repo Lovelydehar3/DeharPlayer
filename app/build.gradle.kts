@@ -1,82 +1,189 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.dehar.player"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.dehar.player"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: ""
+            val keystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+            val keyAliasEnv = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+            val keyPasswordEnv = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+
+            if (keystorePath.isNotEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = keyAliasEnv
+                keyPassword = keyPasswordEnv
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
         }
     }
+    
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
+    
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
         freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.media3.common.util.UnstableApi"
+            "-opt-in=kotlin.RequiresOptIn",
+            "-Xcontext-receivers",
+            "-Xjvm-default=all"
         )
     }
+    
     buildFeatures {
         compose = true
+        buildConfig = true
+        viewBinding = false
+    }
+    
+    bundle {
+        language { enableSplit = true }
+        density { enableSplit = true }
+        abi { enableSplit = true }
+    }
+    
+    packaging {
+        resources {
+            excludes += listOf("/META-INF/{AL2.0,LGPL2.1}", "/*.kotlin_module")
+        }
     }
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
+    coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
+    // Project Modules
+    implementation(projects.core.ui)
+    implementation(projects.core.data)
+    implementation(projects.core.domain)
+    implementation(projects.core.common)
+    
+    implementation(projects.feature.home)
+    implementation(projects.feature.browser)
+    implementation(projects.feature.videoPlayer)
+    implementation(projects.feature.musicPlayer)
+    implementation(projects.feature.musicLibrary)
+    implementation(projects.feature.lyrics)
+    implementation(projects.feature.ringtoneEditor)
+    implementation(projects.feature.subtitle)
+    implementation(projects.feature.equalizer)
+    implementation(projects.feature.settings)
+    implementation(projects.feature.cloudDrive)
+    implementation(projects.feature.smb)
+    implementation(projects.feature.cast)
+    implementation(projects.feature.transfer)
+    implementation(projects.feature.torrent)
+    implementation(projects.feature.usb)
+    implementation(projects.feature.privateFolder)
+    implementation(projects.feature.mediaManager)
+    implementation(projects.feature.whatsappStatus)
+    implementation(projects.feature.videoEditor)
+    implementation(projects.feature.tv)
+    
+    implementation(projects.player.core)
+    implementation(projects.player.service)
+
+    // Android Core & Lifecycle
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
-    implementation(composeBom)
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.animation)
+    implementation(libs.compose.foundation)
+    implementation(libs.navigation.compose)
 
-    // Media3 (ExoPlayer)
-    val media3Version = "1.5.1"
-    implementation("androidx.media3:media3-exoplayer:$media3Version")
-    implementation("androidx.media3:media3-ui:$media3Version")
-    implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
-    implementation("androidx.media3:media3-exoplayer-dash:$media3Version")
-    implementation("androidx.media3:media3-session:$media3Version")
+    // DI
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.hilt.navigation.compose)
 
-    // DataStore Preferences
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // Image Loading
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network)
+    implementation(libs.coil.video)
+    
+    // Key-Value Storage
+    implementation(libs.mmkv)
+    implementation(libs.androidx.datastore.preferences)
+    
+    // Splash
+    implementation(libs.splashscreen)
 
-    // Coil for thumbnails
-    implementation("io.coil-kt:coil-compose:2.7.0")
+    // Media3 / ExoPlayer
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.exoplayer.hls)
+    implementation(libs.media3.exoplayer.dash)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.session)
+    // Note: FFmpeg decoder for media3 is not available in standard repos
+    // implementation(libs.media3.exoplayer.ffmpeg)
+    implementation(libs.media3.cast)
 
-    // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    // Cast / Chromecast
+    implementation(libs.cast.framework)
+
+    // Home screen widget
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+
+    // Torrent streaming - Note: version 2.0.0 not available, use available versions or skip for now
+    // implementation(libs.torrentstream.android)
+
+    // SMB network shares
+    implementation(libs.smbj)
+
+    // FFmpeg for ringtone editor + video trim - Note: version 6.0 not available in standard repos
+    // implementation(libs.ffmpeg.kit.full)
+
+    // Biometric vault
+    implementation(libs.biometric)
+
+    // Charset detection for subtitles
+    implementation("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
 }

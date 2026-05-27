@@ -62,6 +62,11 @@ fun FolderScreen(
         layoutSettings = preferencesManager.getLayoutSettings()
     }
 
+    var whatsappStatuses by remember { mutableStateOf<List<VideoData>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        whatsappStatuses = videoRepository.getWhatsAppStatuses()
+    }
+
     LaunchedEffect(folderPath, layoutSettings.sortOrder) {
         val list = videoRepository.getVideosInFolder(folderPath, layoutSettings.sortOrder)
         videos = list
@@ -191,6 +196,29 @@ fun FolderScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 96.dp)
                 ) {
+                    if (whatsappStatuses.isNotEmpty() && folderPath == "/") {
+                        item {
+                            Surface(
+                                onClick = { /* Navigate to status viewer or list */ },
+                                color = Color(0xFF1B2B3A),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, null, tint = DeharUnplayedCyan)
+                                    Spacer(Modifier.width(12.dp))
+                                    Column {
+                                        Text("WhatsApp Status", color = Color.White, fontWeight = FontWeight.Bold)
+                                        Text("${whatsappStatuses.size} new statuses found", color = Color.Gray, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (layoutSettings.layoutType == "GRID") {
                         val chunkedVideos = filteredVideos.chunked(2)
                         itemsIndexed(chunkedVideos) { _, rowItems ->

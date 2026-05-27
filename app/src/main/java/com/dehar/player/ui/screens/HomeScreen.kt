@@ -52,6 +52,12 @@ import com.dehar.player.ui.theme.DeharBlue
 import com.dehar.player.ui.theme.DeharUnplayedCyan
 import kotlinx.coroutines.launch
 
+import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.LazyRow
+
+
+import com.dehar.player.ui.components.VideoInfoDialog
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -67,6 +73,26 @@ fun HomeScreen(
     var folders by remember { mutableStateOf<List<FolderData>>(emptyList()) }
     var allVideos by remember { mutableStateOf<List<com.dehar.player.data.VideoData>>(emptyList()) }
     var resumeVideos by remember { mutableStateOf<List<FolderResume>>(emptyList()) }
+
+    var selectedVideoForInfo by remember { mutableStateOf<com.dehar.player.data.VideoData?>(null) }
+
+    data class SmartCollection(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val items: List<com.dehar.player.data.VideoData>)
+    val smartCollections by remember(allVideos) {
+        derivedStateOf {
+            listOf(
+                SmartCollection("4K Videos", Icons.Default.Hd, 
+                    allVideos.filter { it.width >= 3840 }),
+                SmartCollection("Long Videos", Icons.Default.Schedule, 
+                    allVideos.filter { it.duration > 3600_000L }),
+                SmartCollection("Unwatched", Icons.Default.FiberNew, 
+                    allVideos.filter { it.playCount == 0 && it.duration > 120_000L }),
+                SmartCollection("Recently Added", Icons.Default.NewReleases, 
+                    allVideos.filter { it.dateAdded > (System.currentTimeMillis() / 1000) - 30L * 24 * 3600 }),
+                SmartCollection("Favorites", Icons.Default.Favorite, 
+                    allVideos.filter { it.isFavorite })
+            ).filter { it.items.isNotEmpty() }
+        }
+    }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     
@@ -241,6 +267,14 @@ fun HomeScreen(
         },
         modifier = modifier
     ) { innerPadding ->
+        if (selectedVideoForInfo != null) {
+            VideoInfoDialog(
+                uri = selectedVideoForInfo!!.uri,
+                context = context,
+                onDismiss = { selectedVideoForInfo = null }
+            )
+        }
+
         if (layoutSortDialogVisible) {
             LayoutAndSortDialog(
                 initialSettings = layoutSettings,
@@ -330,6 +364,60 @@ fun HomeScreen(
                         ) {
                             HomeChip(icon = Icons.Filled.MusicNote, text = "Music", onClick = { navController.navigate(Routes.MUSIC_LIBRARY) })
                             HomeChip(icon = Icons.Filled.PlayCircle, text = "Video")
+                            HomeChip(icon = Icons.Filled.Lock, text = "Vault", onClick = { navController.navigate(Routes.PRIVATE_VAULT) })
+                            HomeChip(icon = Icons.Filled.Delete, text = "Bin", onClick = { navController.navigate(Routes.mediaManager("recycle_bin")) })
+                            }
+                            }
+                    if (smartCollections.isNotEmpty()) {
+                        item {
+                            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                                Text(
+                                    "Collections",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+                                )
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 18.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(smartCollections) { collection ->
+                                        Surface(
+                                            onClick = { 
+                                                if (collection.title == "Favorites") {
+                                                    // TODO: Navigate to favorites
+                                                } else {
+                                                    // TODO: Navigate to filtered view
+                                                }
+                                            },
+                                            color = Color(0xFF1B2B3A),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.width(140.dp)
+                                        ) {
+                                            Column(modifier = Modifier.padding(16.dp)) {
+                                                Icon(
+                                                    collection.icon,
+                                                    contentDescription = null,
+                                                    tint = DeharAccent,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                                Spacer(Modifier.height(12.dp))
+                                                Text(
+                                                    collection.title,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = Color.White,
+                                                    maxLines = 1
+                                                )
+                                                Text(
+                                                    "${collection.items.size} videos",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.Gray
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -382,6 +470,18 @@ fun HomeScreen(
                                     onClick = {
                                         val originalIndex = allVideos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
                                         navController.navigate(Routes.player(originalIndex, video.folderPath))
+                                    },
+                                    onDeleteClick = {
+                                        scope.launch {
+                                            videoRepository.moveToRecycleBin(video)
+                                            // Refresh lists
+                                            allVideos = videoRepository.getAllVideos(layoutSettings.sortOrder)
+                                            folders = videoRepository.getVideoFolders(layoutSettings.sortOrder)
+                                            Toast.makeText(context, "Moved to Recycle Bin", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    onInfoClick = {
+                                        selectedVideoForInfo = video
                                     }
                                 )
                             }

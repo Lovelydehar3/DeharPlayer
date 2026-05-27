@@ -17,12 +17,17 @@ import com.dehar.player.data.PreferencesManager
 import com.dehar.player.data.VideoRepository
 import com.dehar.player.player.MusicPlaybackManager
 import com.dehar.player.ui.screens.FolderScreen
-import com.dehar.player.ui.screens.HomeScreen
 import com.dehar.player.ui.screens.LockScreen
 import com.dehar.player.ui.screens.ExternalPlayerScreen
 import com.dehar.player.ui.screens.PlayerScreen
-import com.dehar.player.ui.screens.MusicLibraryScreen
-import com.dehar.player.ui.screens.NowPlayingScreen
+import com.dehar.player.feature.home.HomeScreen
+import com.dehar.player.feature.musiclibrary.MusicLibraryScreen
+import com.dehar.player.feature.musicplayer.MusicPlayerScreen
+import com.dehar.player.feature.videoplayer.VideoPlayerScreen
+import com.dehar.player.feature.settings.SettingsScreen
+
+import com.dehar.player.feature.mediamanager.MediaManagerScreen
+import com.dehar.player.feature.privatefolder.PrivateFolderScreen
 
 @Composable
 fun DeharNavGraph(
@@ -63,12 +68,7 @@ fun DeharNavGraph(
             }
             
             composable(Routes.HOME) {
-                HomeScreen(
-                    navController = navController,
-                    videoRepository = videoRepository,
-                    preferencesManager = preferencesManager,
-                    musicPlaybackManager = musicPlaybackManager
-                )
+                HomeScreen()
             }
 
             composable(Routes.EXTERNAL_PLAYER) {
@@ -114,16 +114,33 @@ fun DeharNavGraph(
             }
 
             composable(Routes.MUSIC_LIBRARY) {
-                MusicLibraryScreen(
-                    navController = navController,
-                    musicPlaybackManager = musicPlaybackManager
-                )
+                MusicLibraryScreen()
             }
 
             composable(Routes.NOW_PLAYING) {
-                NowPlayingScreen(
-                    navController = navController,
-                    musicPlaybackManager = musicPlaybackManager
+                MusicPlayerScreen()
+            }
+
+            composable(Routes.VIDEO_PLAYER) {
+                VideoPlayerScreen()
+            }
+
+            composable(Routes.SETTINGS) {
+                SettingsScreen()
+            }
+
+            composable(Routes.PRIVATE_VAULT) {
+                PrivateFolderScreen()
+            }
+
+            composable(
+                route = Routes.MEDIA_MANAGER,
+                arguments = listOf(navArgument("tab") { defaultValue = "recycle_bin" })
+            ) { backStackEntry ->
+                val tab = backStackEntry.arguments?.getString("tab")
+                MediaManagerScreen(
+                    initialTab = tab,
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

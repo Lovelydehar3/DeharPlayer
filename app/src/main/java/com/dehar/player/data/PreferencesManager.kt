@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "dehar_player_prefs")
+private val Context.playerPrefsStore: DataStore<Preferences> by preferencesDataStore(name = "dehar_player_prefs")
 
 class PreferencesManager(private val context: Context) {
 
@@ -38,17 +38,168 @@ class PreferencesManager(private val context: Context) {
         private val KEY_ADV_DISPLAY_LENGTH = booleanPreferencesKey("adv_display_length")
         private val KEY_ADV_SHOW_HIDDEN = booleanPreferencesKey("adv_show_hidden")
         private val KEY_ADV_NOMEDIA = booleanPreferencesKey("adv_nomedia")
+
+        private val KEY_DECODER_MODE = stringPreferencesKey("decoder_mode")
+        private val KEY_AUTOPLAY_NEXT = booleanPreferencesKey("autoplay_next")
+        private val KEY_AUTOPLAY_DELAY_SECS = intPreferencesKey("autoplay_delay_secs")
+        private val KEY_PIP_AUTO_ENTER = booleanPreferencesKey("pip_auto_enter")
+        private val KEY_SEEK_PREVIEW_ENABLED = booleanPreferencesKey("seek_preview_enabled")
+        private val KEY_AUTOLOAD_LYRICS = booleanPreferencesKey("autoload_lyrics")
+        private val KEY_LYRICS_API_ENABLED = booleanPreferencesKey("lyrics_api_enabled")
+        private val KEY_VAULT_ENABLED = booleanPreferencesKey("vault_enabled")
+        private val KEY_VAULT_AUTO_LOCK_MINUTES = intPreferencesKey("vault_auto_lock_minutes")
+        private val KEY_RECYCLE_BIN_ENABLED = booleanPreferencesKey("recycle_bin_enabled")
+        private val KEY_RECYCLE_BIN_RETENTION_DAYS = intPreferencesKey("recycle_bin_retention_days")
+        private val KEY_SUBTITLE_AUTO_LOAD = booleanPreferencesKey("subtitle_auto_load")
+        private val KEY_SUBTITLE_FONT_SIZE = intPreferencesKey("subtitle_font_size")
+        private val KEY_SUBTITLE_POSITION = floatPreferencesKey("subtitle_position")
+        private val KEY_WIDGET_ENABLED = booleanPreferencesKey("widget_enabled")
+    }
+
+    val decoderMode: String
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_DECODER_MODE] ?: "AUTO" }.first()
+        }
+
+    suspend fun setDecoderMode(mode: String) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_DECODER_MODE] = mode }
+    }
+
+    val autoplayNext: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_AUTOPLAY_NEXT] ?: true }.first()
+        }
+
+    suspend fun setAutoplayNext(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_AUTOPLAY_NEXT] = enabled }
+    }
+
+    val autoplayDelaySecs: Int
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_AUTOPLAY_DELAY_SECS] ?: 5 }.first()
+        }
+
+    suspend fun setAutoplayDelaySecs(secs: Int) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_AUTOPLAY_DELAY_SECS] = secs }
+    }
+
+    val pipAutoEnter: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_PIP_AUTO_ENTER] ?: true }.first()
+        }
+
+    suspend fun setPipAutoEnter(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_PIP_AUTO_ENTER] = enabled }
+    }
+
+    val seekPreviewEnabled: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_SEEK_PREVIEW_ENABLED] ?: true }.first()
+        }
+
+    suspend fun setSeekPreviewEnabled(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_SEEK_PREVIEW_ENABLED] = enabled }
+    }
+
+    val autoLoadLyrics: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_AUTOLOAD_LYRICS] ?: true }.first()
+        }
+
+    suspend fun setAutoLoadLyrics(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_AUTOLOAD_LYRICS] = enabled }
+    }
+
+    val lyricsApiEnabled: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_LYRICS_API_ENABLED] ?: true }.first()
+        }
+
+    suspend fun setLyricsApiEnabled(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_LYRICS_API_ENABLED] = enabled }
+    }
+
+    val vaultEnabled: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_VAULT_ENABLED] ?: false }.first()
+        }
+
+    suspend fun setVaultEnabled(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_VAULT_ENABLED] = enabled }
+    }
+
+    val vaultAutoLockMinutes: Int
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_VAULT_AUTO_LOCK_MINUTES] ?: 5 }.first()
+        }
+
+    suspend fun setVaultAutoLockMinutes(minutes: Int) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_VAULT_AUTO_LOCK_MINUTES] = minutes }
+    }
+
+    val recycleBinEnabled: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_RECYCLE_BIN_ENABLED] ?: true }.first()
+        }
+
+    suspend fun setRecycleBinEnabled(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_RECYCLE_BIN_ENABLED] = enabled }
+    }
+
+    val recycleBinRetentionDays: Int
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_RECYCLE_BIN_RETENTION_DAYS] ?: 30 }.first()
+        }
+
+    suspend fun setRecycleBinRetentionDays(days: Int) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_RECYCLE_BIN_RETENTION_DAYS] = days }
+    }
+
+    val subtitleAutoLoad: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_SUBTITLE_AUTO_LOAD] ?: true }.first()
+        }
+
+    suspend fun setSubtitleAutoLoad(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_SUBTITLE_AUTO_LOAD] = enabled }
+    }
+
+    val subtitleFontSize: Int
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_SUBTITLE_FONT_SIZE] ?: 16 }.first()
+        }
+
+    suspend fun setSubtitleFontSize(size: Int) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_SUBTITLE_FONT_SIZE] = size }
+    }
+
+    val subtitlePosition: Float
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_SUBTITLE_POSITION] ?: 0.85f }.first()
+        }
+
+    suspend fun setSubtitlePosition(position: Float) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_SUBTITLE_POSITION] = position }
+    }
+
+    val widgetEnabled: Boolean
+        get() = kotlinx.coroutines.runBlocking {
+            context.playerPrefsStore.data.map { prefs -> prefs[KEY_WIDGET_ENABLED] ?: true }.first()
+        }
+
+    suspend fun setWidgetEnabled(enabled: Boolean) {
+        context.playerPrefsStore.edit { prefs -> prefs[KEY_WIDGET_ENABLED] = enabled }
     }
 
     suspend fun getPin(): String? {
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             prefs[KEY_PIN_HASH]
         }.first()
     }
 
     suspend fun setPin(pin: String) {
         val hashed = hashString(pin)
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs[KEY_PIN_HASH] = hashed
             prefs[KEY_PIN_ENABLED] = true
         }
@@ -60,13 +211,13 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun isPinEnabled(): Boolean {
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             prefs[KEY_PIN_ENABLED] ?: false
         }.first() && isPinSet()
     }
 
     suspend fun setPinEnabled(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs[KEY_PIN_ENABLED] = enabled
         }
     }
@@ -77,7 +228,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun clearPin() {
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs.remove(KEY_PIN_HASH)
             prefs[KEY_PIN_ENABLED] = false
         }
@@ -85,7 +236,7 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun getLastPosition(videoPath: String): Long {
         val key = longPreferencesKey(PREFIX_VIDEO_POSITION + sanitizeKey(videoPath))
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             prefs[key] ?: 0L
         }.first()
     }
@@ -94,20 +245,20 @@ class PreferencesManager(private val context: Context) {
         val keysByPath = videoPaths.associateWith { path ->
             longPreferencesKey(PREFIX_VIDEO_POSITION + sanitizeKey(path))
         }
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             keysByPath.mapValues { (_, key) -> prefs[key] ?: 0L }
         }.first()
     }
 
     suspend fun setLastPosition(videoPath: String, position: Long) {
         val key = longPreferencesKey(PREFIX_VIDEO_POSITION + sanitizeKey(videoPath))
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs[key] = position
         }
     }
 
     suspend fun getSortOrder(): SortOrder {
-        val name = context.dataStore.data.map { prefs ->
+        val name = context.playerPrefsStore.data.map { prefs ->
             prefs[KEY_SORT_ORDER] ?: SortOrder.NAME_ASC.name
         }.first()
         return try {
@@ -118,25 +269,25 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun setSortOrder(order: SortOrder) {
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs[KEY_SORT_ORDER] = order.name
         }
     }
 
     suspend fun getResizeMode(defaultMode: Int): Int {
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             prefs[KEY_RESIZE_MODE] ?: defaultMode
         }.first()
     }
 
     suspend fun setResizeMode(mode: Int) {
-        context.dataStore.edit { prefs ->
+        context.playerPrefsStore.edit { prefs ->
             prefs[KEY_RESIZE_MODE] = mode
         }
     }
 
     suspend fun getLayoutSettings(): FolderLayoutSettings {
-        return context.dataStore.data.map { prefs ->
+        return context.playerPrefsStore.data.map { prefs ->
             val sortName = prefs[KEY_SORT_ORDER] ?: SortOrder.NAME_ASC.name
             val sortOrder = try { SortOrder.valueOf(sortName) } catch(e: Exception) { SortOrder.NAME_ASC }
             FolderLayoutSettings(
@@ -160,22 +311,22 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun setLayoutSettings(settings: FolderLayoutSettings) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_VIEW_MODE] = settings.viewMode
-            prefs[KEY_LAYOUT_TYPE] = settings.layoutType
-            prefs[KEY_SORT_ORDER] = settings.sortOrder.name
-            prefs[KEY_FIELDS_THUMBNAIL] = settings.showThumbnail
-            prefs[KEY_FIELDS_LENGTH] = settings.showLength
-            prefs[KEY_FIELDS_EXTENSION] = settings.showExtension
-            prefs[KEY_FIELDS_PLAYED_TIME] = settings.showPlayedTime
-            prefs[KEY_FIELDS_RESOLUTION] = settings.showResolution
-            prefs[KEY_FIELDS_FRAME_RATE] = settings.showFrameRate
-            prefs[KEY_FIELDS_PATH] = settings.showPath
-            prefs[KEY_FIELDS_SIZE] = settings.showSize
-            prefs[KEY_FIELDS_DATE] = settings.showDate
-            prefs[KEY_ADV_DISPLAY_LENGTH] = settings.displayLengthOverThumbnail
-            prefs[KEY_ADV_SHOW_HIDDEN] = settings.showHidden
-            prefs[KEY_ADV_NOMEDIA] = settings.recognizeNoMedia
+        context.playerPrefsStore.edit { mutablePrefs ->
+            mutablePrefs[KEY_VIEW_MODE] = settings.viewMode
+            mutablePrefs[KEY_LAYOUT_TYPE] = settings.layoutType
+            mutablePrefs[KEY_SORT_ORDER] = settings.sortOrder.name
+            mutablePrefs[KEY_FIELDS_THUMBNAIL] = settings.showThumbnail
+            mutablePrefs[KEY_FIELDS_LENGTH] = settings.showLength
+            mutablePrefs[KEY_FIELDS_EXTENSION] = settings.showExtension
+            mutablePrefs[KEY_FIELDS_PLAYED_TIME] = settings.showPlayedTime
+            mutablePrefs[KEY_FIELDS_RESOLUTION] = settings.showResolution
+            mutablePrefs[KEY_FIELDS_FRAME_RATE] = settings.showFrameRate
+            mutablePrefs[KEY_FIELDS_PATH] = settings.showPath
+            mutablePrefs[KEY_FIELDS_SIZE] = settings.showSize
+            mutablePrefs[KEY_FIELDS_DATE] = settings.showDate
+            mutablePrefs[KEY_ADV_DISPLAY_LENGTH] = settings.displayLengthOverThumbnail
+            mutablePrefs[KEY_ADV_SHOW_HIDDEN] = settings.showHidden
+            mutablePrefs[KEY_ADV_NOMEDIA] = settings.recognizeNoMedia
         }
     }
 

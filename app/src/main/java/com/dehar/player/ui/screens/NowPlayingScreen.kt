@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -38,7 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.dehar.player.data.PlaylistManager
 import com.dehar.player.data.SongData
 import com.dehar.player.player.MusicPlaybackManager
@@ -68,10 +69,14 @@ fun NowPlayingScreen(
     var showEQDialog by remember { mutableStateOf(false) }
     var showTimerDialog by remember { mutableStateOf(false) }
     var showSpeedDialog by remember { mutableStateOf(false) }
+    var lyricsExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentSong) {
         currentSong?.let {
             isFavorite = playlistManager.isFavorite(it.id)
+            if (lyricsExpanded) {
+                musicPlaybackManager.loadLyrics(it)
+            }
         }
     }
 
@@ -338,9 +343,12 @@ fun NowPlayingScreen(
                 // Center: Lyrics Capsule button (Screenshot 3 style!)
                 Surface(
                     onClick = {
-                        Toast.makeText(context, "Lyrics system synced with ID3 metadata!", Toast.LENGTH_SHORT).show()
+                        lyricsExpanded = !lyricsExpanded
+                        if (lyricsExpanded && musicPlaybackManager.lyricsLines.isEmpty()) {
+                            musicPlaybackManager.loadLyrics(currentSong)
+                        }
                     },
-                    color = Color.White.copy(alpha = 0.08f),
+                    color = if (lyricsExpanded) DeharAccent.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.08f),
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.height(40.dp)
                 ) {
@@ -348,11 +356,20 @@ fun NowPlayingScreen(
                         modifier = Modifier.padding(horizontal = 24.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val currentLyricText = if (musicPlaybackManager.currentLyricsLine >= 0) {
+                            musicPlaybackManager.lyricsLines[musicPlaybackManager.currentLyricsLine].text
+                        } else if (musicPlaybackManager.lyricsLoading) {
+                            "Loading lyrics..."
+                        } else {
+                            "Lyrics"
+                        }
                         Text(
-                            text = "Rise with the morning",
+                            text = currentLyricText,
                             color = DeharAccent,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -360,6 +377,79 @@ fun NowPlayingScreen(
                 // Right: Play Queue trigger button
                 IconButton(onClick = { showQueueSheet = true }) {
                     Icon(Icons.Default.QueueMusic, contentDescription = "Play Queue", tint = Color.LightGray)
+                }
+            }
+
+            // LYRICS PANEL (Animated Visibility)
+            AnimatedVisibility(
+                visible = lyricsExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .padding(vertical = 12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.05f))
+                ) {
+                    when {
+                        musicPlaybackManager.lyricsLoading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                                color = DeharAccent
+                            )
+                        }
+                        musicPlaybackManager.lyricsNotFound -> {
+                            Column(
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("No lyrics found", color = Color.Gray)
+                                TextButton(onClick = { musicPlaybackManager.loadLyrics(currentSong) }) {
+                                    Text("Retry", color = DeharAccent)
+                                }
+                            }
+                        }
+                        else -> {
+                            val listState = rememberLazyListState()
+                            
+                            LaunchedEffect(musicPlaybackManager.currentLyricsLine) {
+                                if (musicPlaybackManager.currentLyricsLine >= 0) {
+                                    listState.animateScrollToItem(
+                                        (musicPlaybackManager.currentLyricsLine - 2).coerceAtLeast(0)
+                                    )
+                                }
+                            }
+                            
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                itemsIndexed(musicPlaybackManager.lyricsLines) { index, line ->
+                                    val isCurrent = musicPlaybackManager.currentLyricsLine == index
+                                    Text(
+                                        text = line.text,
+                                        color = if (isCurrent) DeharAccent else Color.White.copy(
+                                            alpha = if (index < musicPlaybackManager.currentLyricsLine) 0.4f else 0.7f
+                                        ),
+                                        fontSize = if (isCurrent) 18.sp else 15.sp,
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .clickable {
+                                                musicPlaybackManager.seekTo(line.timestampMs)
+                                            }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

@@ -15,7 +15,15 @@ import com.dehar.player.ui.navigation.DeharNavGraph
 import com.dehar.player.ui.theme.DeharBackground
 import com.dehar.player.ui.theme.DeharPlayerTheme
 
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
+import android.os.Build
+import com.dehar.player.data.PreferencesManager
+
 class MainActivity : ComponentActivity() {
+    private var isPipModeEnabled = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val externalVideoUri = intent.takeIf { it.action == Intent.ACTION_VIEW }?.data
@@ -35,6 +43,36 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        val prefs = PreferencesManager(this)
+        if (prefs.pipAutoEnter) {
+            enterPipMode()
+        }
+    }
+
+    private fun enterPipMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+                enterPictureInPictureMode(params)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isPipModeEnabled = isInPictureInPictureMode
+        // We might want to notify the UI/ViewModel about PiP mode change
     }
 
     private fun resolveDisplayName(uri: Uri): String {

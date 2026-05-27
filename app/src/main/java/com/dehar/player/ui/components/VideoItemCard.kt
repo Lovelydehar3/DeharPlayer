@@ -5,11 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.dehar.player.data.VideoData
 import com.dehar.player.ui.theme.DeharSurface
 import com.dehar.player.ui.theme.DeharUnplayedCyan
@@ -30,8 +28,6 @@ import android.util.Size
 import android.provider.MediaStore
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -40,9 +36,13 @@ fun VideoItemCard(
     video: VideoData,
     isPlayed: Boolean = false,
     onClick: () -> Unit,
+    onDeleteClick: () -> Unit = {},
+    onInfoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    var showMenu by remember { mutableStateOf(false) }
+    
     val thumbnailBitmap by produceState<Bitmap?>(initialValue = null, video.uri) {
         value = withContext(Dispatchers.IO) {
             try {
@@ -179,12 +179,38 @@ fun VideoItemCard(
             }
         }
 
-        Icon(
-            imageVector = Icons.Default.MoreVert,
-            contentDescription = "Video options",
-            tint = Color(0xFFE8EDF3),
-            modifier = Modifier.size(28.dp)
-        )
+        Box {
+            IconButton(onClick = { showMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Video options",
+                    tint = Color(0xFFE8EDF3),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.background(DeharSurface)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Delete", color = Color.Red) },
+                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) },
+                    onClick = {
+                        showMenu = false
+                        onDeleteClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Info", color = Color.White) },
+                    leadingIcon = { Icon(Icons.Default.Info, contentDescription = null, tint = Color.White) },
+                    onClick = {
+                        showMenu = false
+                        onInfoClick()
+                    }
+                )
+            }
+        }
     }
 }
 

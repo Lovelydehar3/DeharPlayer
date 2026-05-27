@@ -2,6 +2,12 @@ package com.dehar.player.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.dehar.player.data.*
 import com.dehar.player.player.MusicPlaybackManager
 import com.dehar.player.ui.components.MiniPlayer
@@ -59,8 +65,8 @@ fun MusicLibraryScreen(
     var playlists by remember { mutableStateOf<List<Playlist>>(emptyList()) }
     var favoriteSongIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     
-    var selectedTab by remember { mutableIntStateOf(1) } // 0 = Videos, 1 = Songs, 2 = Playlists, 3 = Folders, 4 = Artists, 5 = Albums
-    val tabs = listOf("Videos", "Songs", "Playlists", "Folders", "Artists", "Albums")
+    var selectedTab by remember { mutableIntStateOf(1) } // 0 = Videos, 1 = Songs, 2 = Playlists, 3 = Folders, 4 = Artists, 5 = Albums, 6 = Genres
+    val tabs = listOf("Videos", "Songs", "Playlists", "Folders", "Artists", "Albums", "Genres")
     
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -73,8 +79,25 @@ fun MusicLibraryScreen(
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var showPlaylistPickerDialog by remember { mutableStateOf(false) }
     
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.values.any { it }) {
+            scope.launch { songs = musicRepository.getSongs() }
+        }
+    }
+
     LaunchedEffect(Unit) {
-        songs = musicRepository.getSongs()
+        val perms = if (Build.VERSION.SDK_INT >= 33)
+            arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
+        else
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            
+        if (perms.any { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }) {
+            permissionLauncher.launch(perms)
+        } else {
+            songs = musicRepository.getSongs()
+        }
         playlists = playlistManager.getPlaylists()
         favoriteSongIds = playlistManager.getFavoriteSongIds()
     }
@@ -369,9 +392,45 @@ fun MusicLibraryScreen(
                                 }
                             }
                         }
+                        6 -> { // GENRES Tab
+                            var genres by remember { mutableStateOf<List<com.dehar.player.data.GenreItem>>(emptyList()) }
+                            LaunchedEffect(Unit) {
+                                musicRepository.getGenres().collect { genres = it }
+                            }
+                            GenresTab(genres = genres) { genreName ->
+                                // Optional: navigate to specific genre list
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun GenresTab(genres: List<com.dehar.player.data.GenreItem>, onGenreClick: (String) -> Unit) {
+    if (genres.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No genres found", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(genres) { genre ->
+                ListItem(
+                    headlineContent = { Text(genre.name, color = Color.White) },
+                    supportingContent = { Text("${genre.songCount} songs", color = Color.Gray) },
+                    leadingContent = {
+                        Icon(Icons.Default.MusicNote, null, tint = DeharAccent)
+                    },
+                    modifier = Modifier.clickable { onGenreClick(genre.name) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            }
+        }
+    }
+}
 
             // 3. Floating Bottom Multi-Select Actions Bar (Screenshot 2 style)
             AnimatedVisibility(
@@ -814,6 +873,28 @@ private fun EmptyLibraryMessage(msg: String) {
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
+        )
+    }
+}
+
+@Composable
+fun GenresTab(genres: List<GenreItem>, onGenreClick: (String) -> Unit) {
+    LazyColumn {
+        items(
+            count = genres.size,
+            itemContent = { index ->
+                val genre = genres[index]
+                ListItem(
+                    headlineContent = { Text(genre.name) },
+                    supportingContent = { Text("${genre.songCount} songs") },
+                    leadingContent = {
+                        Icon(Icons.Default.MusicNote, null,
+                            tint = MaterialTheme.colorScheme.primary)
+                    },
+                    modifier = Modifier.clickable { onGenreClick(genre.name) }
+                )
+                HorizontalDivider()
+            }
         )
     }
 }

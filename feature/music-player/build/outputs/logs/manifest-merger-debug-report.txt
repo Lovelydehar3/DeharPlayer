@@ -1,0 +1,16 @@
+-- Merging decision tree log ---
+manifest
+ADDED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml:2:13-83
+INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml:2:13-83
+	package
+		INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml
+	xmlns:android
+		ADDED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml:2:23-81
+uses-sdk
+INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml reason: use-sdk injection requested
+INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml
+INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml
+	android:targetSdkVersion
+		INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml
+	android:minSdkVersion
+		INJECTED from E:\Dehar Player update\DeharPlayer\feature\music-player\build\intermediates\tmp\ProcessLibraryManifest\debug\tempAndroidManifest15183518623702009201.xml
