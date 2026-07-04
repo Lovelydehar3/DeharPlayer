@@ -98,7 +98,7 @@ class LyricsRepository @Inject constructor(
      * Detect lyrics format from file extension
      */
     private fun detectFormat(extension: String): LyricsFormat {
-        return when (extension.lowercase()) {
+        return when (extension?.lowercase()) {
             "lrc" -> LyricsFormat.LRC
             "vtt" -> LyricsFormat.VTT
             "txt" -> LyricsFormat.PLAIN
@@ -118,7 +118,7 @@ class LyricsRepository @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val audioFile = File(audioPath)
-                val lyricsPath = audioFile.parent + File.separator + audioFile.nameWithoutExtension + ".lrc"
+                val lyricsPath = (audioFile.parent ?: audioFile.absolutePath) + File.separator + audioFile.nameWithoutExtension + ".lrc"
                 val lyricsFile = File(lyricsPath)
 
                 val content = when (format) {
@@ -163,7 +163,7 @@ class LyricsRepository @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val audioFile = File(audioPath)
-                val lyricsPath = audioFile.parent + File.separator + audioFile.nameWithoutExtension + ".lrc"
+                val lyricsPath = (audioFile.parent ?: audioFile.absolutePath) + File.separator + audioFile.nameWithoutExtension + ".lrc"
                 File(lyricsPath).delete()
             } catch (e: Exception) {
                 false

@@ -23,9 +23,13 @@ import com.dehar.player.R
 import com.dehar.player.player.MusicService
 
 class MusicWidget : GlanceAppWidget() {
-    
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        provideContent { Content() }
+    }
+
     @Composable
-    override fun Content() {
+    fun Content() {
         val prefs = currentState<Preferences>()
         val title = prefs[stringPreferencesKey("title")] ?: "Not playing"
         val artist = prefs[stringPreferencesKey("artist")] ?: ""

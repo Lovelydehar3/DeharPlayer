@@ -41,7 +41,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DeharPlayer"
         android:usesCleartextTraffic="false"
-        android:debuggable="false"
         tools:targetApi="36">
 
         <activity

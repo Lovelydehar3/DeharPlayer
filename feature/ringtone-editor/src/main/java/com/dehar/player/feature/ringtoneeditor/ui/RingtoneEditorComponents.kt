@@ -1,4 +1,4 @@
-package com.dehar.player.feature.ringtoneEditor.ui
+package com.dehar.player.feature.ringtoneeditor.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -34,9 +34,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dehar.player.feature.ringtoneEditor.model.PlaybackState
-import com.dehar.player.feature.ringtoneEditor.model.TrimState
-import com.dehar.player.feature.ringtoneEditor.model.WaveformData
+import com.dehar.player.feature.ringtoneeditor.model.PlaybackState
+import com.dehar.player.feature.ringtoneeditor.model.TrimState
+import com.dehar.player.feature.ringtoneeditor.model.WaveformData
 import kotlin.math.roundToInt
 
 /**
@@ -173,7 +173,7 @@ fun TrimHandle(
                 detectHorizontalDragGestures(
                     onDragStart = { onDraggingChanged(true) },
                     onDragEnd = { onDraggingChanged(false) },
-                    onDrag = { change, dragAmount ->
+                    onHorizontalDrag = { change, dragAmount ->
                         change.consume()
                         val newPosition = (position + dragAmount / size.width).coerceIn(0f, 1f)
                         onPositionChanged(newPosition)

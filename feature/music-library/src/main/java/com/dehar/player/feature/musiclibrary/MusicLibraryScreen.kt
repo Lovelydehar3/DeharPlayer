@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,7 +57,7 @@ fun MusicLibraryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var searchQuery by remember { mutableIntStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier

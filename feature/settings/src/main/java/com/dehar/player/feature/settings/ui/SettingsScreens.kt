@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -139,13 +140,13 @@ private fun SettingsCategory(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Divider()
+        HorizontalDivider()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlaybackSettingsScreen(
+fun LegacyPlaybackSettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -221,7 +222,7 @@ fun PlaybackSettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AudioSettingsScreen(
+fun LegacyAudioSettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -290,7 +291,7 @@ fun AudioSettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UISettingsScreen(
+fun LegacyUISettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -366,7 +367,7 @@ fun UISettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrivacySettingsScreen(
+fun LegacyPrivacySettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {

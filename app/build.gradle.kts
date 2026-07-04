@@ -82,7 +82,19 @@ android {
     
     packaging {
         resources {
-            excludes += listOf("/META-INF/{AL2.0,LGPL2.1}", "/*.kotlin_module")
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/*.kotlin_module",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA"
+            )
         }
     }
 }
@@ -95,9 +107,9 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.core.domain)
     implementation(projects.core.common)
-    
-    implementation(projects.feature.home)
+
     implementation(projects.feature.browser)
+    implementation(projects.feature.home)
     implementation(projects.feature.videoPlayer)
     implementation(projects.feature.musicPlayer)
     implementation(projects.feature.musicLibrary)
@@ -106,17 +118,8 @@ dependencies {
     implementation(projects.feature.subtitle)
     implementation(projects.feature.equalizer)
     implementation(projects.feature.settings)
-    implementation(projects.feature.cloudDrive)
-    implementation(projects.feature.smb)
-    implementation(projects.feature.cast)
-    implementation(projects.feature.transfer)
-    implementation(projects.feature.torrent)
-    implementation(projects.feature.usb)
     implementation(projects.feature.privateFolder)
     implementation(projects.feature.mediaManager)
-    implementation(projects.feature.whatsappStatus)
-    implementation(projects.feature.videoEditor)
-    implementation(projects.feature.tv)
     
     implementation(projects.player.core)
     implementation(projects.player.service)
@@ -132,6 +135,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.compose.animation)
@@ -151,6 +155,7 @@ dependencies {
     // Key-Value Storage
     implementation(libs.mmkv)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
     
     // Splash
     implementation(libs.splashscreen)
@@ -163,10 +168,7 @@ dependencies {
     implementation(libs.media3.session)
     // Note: FFmpeg decoder for media3 is not available in standard repos
     // implementation(libs.media3.exoplayer.ffmpeg)
-    implementation(libs.media3.cast)
 
-    // Cast / Chromecast
-    implementation(libs.cast.framework)
 
     // Home screen widget
     implementation(libs.glance.appwidget)

@@ -1,4 +1,4 @@
-package com.dehar.player.feature.ringtoneEditor.ui
+package com.dehar.player.feature.ringtoneeditor.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,12 +41,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneType
-import com.dehar.player.feature.ringtoneEditor.viewmodel.RingtoneEditorViewModel
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneType
+import com.dehar.player.feature.ringtoneeditor.viewmodel.RingtoneEditorViewModel
 
 /**
  * Main ringtone editor screen
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun RingtoneEditorScreen(
     audioPath: String? = null,
@@ -257,6 +258,7 @@ fun RingtoneEditorScreen(
 /**
  * Ringtone picker/selector screen
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun RingtonePickerScreen(
     onRingtoneSelected: (String) -> Unit,

@@ -63,10 +63,11 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import com.dehar.player.data.VideoData
+import com.dehar.player.data.PreferencesManager
 import com.dehar.player.player.PlayerManager
 import com.dehar.player.player.MediaTrackOption
 import com.dehar.player.ui.theme.*
-import com.dehar.player.utils.TimeUtils
+import com.dehar.player.core.common.TimeUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -83,7 +84,7 @@ fun ExternalPlayerScreen(
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
 
-    val playerManager = remember { PlayerManager(context).apply { initialize() } }
+    val playerManager = remember { PlayerManager(context, PreferencesManager(context)).apply { initialize() } }
     var showControls by remember { mutableStateOf(true) }
     var isControlsLocked by remember { mutableStateOf(false) }
     var showQuickActions by remember { mutableStateOf(false) }

@@ -34,4 +34,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.hilt.navigation.compose)
 }

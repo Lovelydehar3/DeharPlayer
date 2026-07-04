@@ -21,7 +21,7 @@ import coil3.compose.AsyncImage
 import com.dehar.player.data.VideoData
 import com.dehar.player.ui.theme.DeharSurface
 import com.dehar.player.ui.theme.DeharUnplayedCyan
-import com.dehar.player.utils.TimeUtils
+import com.dehar.player.core.common.TimeUtils
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.Size

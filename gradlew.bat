@@ -26,12 +26,6 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
-if not defined JAVA_HOME (
-    if exist "E:\Dehar Player update\jdk17\jdk-17.0.19+10" (
-        set "JAVA_HOME=E:\Dehar Player update\jdk17\jdk-17.0.19+10"
-    )
-)
-
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused
@@ -40,6 +34,12 @@ set APP_HOME=%DIRNAME%
 
 @rem Resolve any "." and ".." in APP_HOME to make it shorter.
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
+
+if not defined JAVA_HOME (
+    if exist "%APP_HOME%\..\jdk17\jdk-17.0.19+10\bin\java.exe" (
+        for %%i in ("%APP_HOME%\..\jdk17\jdk-17.0.19+10") do set "JAVA_HOME=%%~fi"
+    )
+)
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"

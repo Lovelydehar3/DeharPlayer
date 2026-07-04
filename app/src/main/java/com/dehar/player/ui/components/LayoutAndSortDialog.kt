@@ -347,7 +347,7 @@ fun LayoutAndSortDialog(
                         }
                     }
 
-                    Divider(color = Color(0xFF263544), thickness = 1.dp)
+                    HorizontalDivider(color = Color(0xFF263544), thickness = 1.dp)
 
                     // --- 5. ADVANCED ACCORDION ---
                     Row(

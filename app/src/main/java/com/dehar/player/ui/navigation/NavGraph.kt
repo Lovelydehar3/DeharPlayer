@@ -2,11 +2,7 @@ package com.dehar.player.ui.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -27,7 +23,7 @@ import com.dehar.player.feature.videoplayer.VideoPlayerScreen
 import com.dehar.player.feature.settings.SettingsScreen
 
 import com.dehar.player.feature.mediamanager.MediaManagerScreen
-import com.dehar.player.feature.privatefolder.PrivateFolderScreen
+import com.dehar.player.feature.vault.ui.VaultBrowserScreen
 
 @Composable
 fun DeharNavGraph(
@@ -40,22 +36,18 @@ fun DeharNavGraph(
     val videoRepository = remember { VideoRepository(context) }
     val musicPlaybackManager = remember { MusicPlaybackManager(context) }
     
-    var startDestination by remember { mutableStateOf<String?>(null) }
-    
-    LaunchedEffect(Unit) {
-        val hasPin = preferencesManager.isPinEnabled()
-        startDestination = when {
+    val startDestination = remember {
+        when {
             externalVideoUri != null -> Routes.EXTERNAL_PLAYER
-            hasPin -> Routes.LOCK
+            preferencesManager.isPinEnabled() -> Routes.LOCK
             else -> Routes.HOME
         }
     }
-    
-    startDestination?.let { destination ->
-        NavHost(
-            navController = navController,
-            startDestination = destination
-        ) {
+
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
             composable(Routes.LOCK) {
                 LockScreen(
                     preferencesManager = preferencesManager,
@@ -130,7 +122,9 @@ fun DeharNavGraph(
             }
 
             composable(Routes.PRIVATE_VAULT) {
-                PrivateFolderScreen()
+                VaultBrowserScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             composable(

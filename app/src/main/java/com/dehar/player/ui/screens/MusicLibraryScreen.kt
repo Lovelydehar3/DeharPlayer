@@ -16,6 +16,7 @@ import androidx.compose.animation.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -404,33 +405,6 @@ fun MusicLibraryScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun GenresTab(genres: List<com.dehar.player.data.GenreItem>, onGenreClick: (String) -> Unit) {
-    if (genres.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No genres found", color = Color.Gray)
-        }
-    } else {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(genres) { genre ->
-                ListItem(
-                    headlineContent = { Text(genre.name, color = Color.White) },
-                    supportingContent = { Text("${genre.songCount} songs", color = Color.Gray) },
-                    leadingContent = {
-                        Icon(Icons.Default.MusicNote, null, tint = DeharAccent)
-                    },
-                    modifier = Modifier.clickable { onGenreClick(genre.name) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                )
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-            }
-        }
-    }
-}
 
             // 3. Floating Bottom Multi-Select Actions Bar (Screenshot 2 style)
             AnimatedVisibility(
@@ -604,6 +578,30 @@ fun GenresTab(genres: List<com.dehar.player.data.GenreItem>, onGenreClick: (Stri
                 }
             }
         )
+    }
+}
+
+@Composable
+fun GenresTab(genres: List<com.dehar.player.data.GenreItem>, onGenreClick: (String) -> Unit) {
+    if (genres.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No genres found", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(genres) { genre ->
+                ListItem(
+                    headlineContent = { Text(genre.name, color = Color.White) },
+                    supportingContent = { Text("${genre.songCount} songs", color = Color.Gray) },
+                    leadingContent = {
+                        Icon(Icons.Default.MusicNote, null, tint = DeharAccent)
+                    },
+                    modifier = Modifier.clickable { onGenreClick(genre.name) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            }
+        }
     }
 }
 
@@ -873,28 +871,6 @@ private fun EmptyLibraryMessage(msg: String) {
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
-        )
-    }
-}
-
-@Composable
-fun GenresTab(genres: List<GenreItem>, onGenreClick: (String) -> Unit) {
-    LazyColumn {
-        items(
-            count = genres.size,
-            itemContent = { index ->
-                val genre = genres[index]
-                ListItem(
-                    headlineContent = { Text(genre.name) },
-                    supportingContent = { Text("${genre.songCount} songs") },
-                    leadingContent = {
-                        Icon(Icons.Default.MusicNote, null,
-                            tint = MaterialTheme.colorScheme.primary)
-                    },
-                    modifier = Modifier.clickable { onGenreClick(genre.name) }
-                )
-                HorizontalDivider()
-            }
         )
     }
 }

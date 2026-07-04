@@ -1,4 +1,4 @@
-package com.dehar.player.feature.ringtoneEditor.repository
+package com.dehar.player.feature.ringtoneeditor.repository
 
 import android.content.Context
 import android.media.MediaExtractor
@@ -13,9 +13,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneAudio
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneType
-import com.dehar.player.feature.ringtoneEditor.model.WaveformData
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneAudio
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneType
+import com.dehar.player.feature.ringtoneeditor.model.WaveformData
 
 import android.media.MediaCodec
 import android.media.MediaMetadataRetriever

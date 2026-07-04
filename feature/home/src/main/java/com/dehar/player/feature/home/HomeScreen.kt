@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -38,7 +39,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+// import coil3.compose.AsyncImage  // Temporarily disabled due to dependency issues
 import com.dehar.player.core.ui.components.DeharSongRow
 import com.dehar.player.core.ui.components.DeharVideoCard
 import com.dehar.player.feature.home.viewmodel.HomeViewModel
@@ -74,9 +75,10 @@ fun HomeScreen(
             ) {
                 // Continue playing
                 item {
-                    if (uiState.continuePlaying != null) {
+                    val continuePlaying = uiState.continuePlaying
+                    if (continuePlaying != null) {
                         ContinuePlayingCard(
-                            item = uiState.continuePlaying,
+                            item = continuePlaying,
                             onPlay = { /* TODO: Play item */ }
                         )
                     }

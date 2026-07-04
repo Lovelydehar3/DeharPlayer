@@ -52,6 +52,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -78,8 +79,9 @@ import com.dehar.player.ui.components.VideoInfoDialog
 import com.dehar.player.ui.components.DecoderChoiceDialog
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import com.dehar.player.utils.TimeUtils
+import com.dehar.player.core.common.TimeUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
@@ -89,6 +91,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshotFlow
 import kotlin.math.roundToInt
+import com.dehar.player.ui.theme.DeharAccent
 
 @OptIn(UnstableApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -159,10 +162,6 @@ fun PlayerScreen(
     // Mute
     var isMuted by remember { mutableStateOf(false) }
 
-    // Sleep Timer
-    var sleepTimerRemainingSec by remember { mutableIntStateOf(0) }
-    var showSleepTimerDialog by remember { mutableStateOf(false) }
-
     // A-B Repeat
     var pointA by remember { mutableStateOf<Long?>(null) }
     var pointB by remember { mutableStateOf<Long?>(null) }
@@ -183,8 +182,6 @@ fun PlayerScreen(
     var showScreenshotFlash by remember { mutableStateOf(false) }
 
     // Customize dialog
-import com.dehar.player.ui.components.DecoderChoiceDialog
-...
     var showCustomizeDialog by remember { mutableStateOf(false) }
     var showDecoderDialog by remember { mutableStateOf(false) }
 
@@ -227,6 +224,16 @@ import com.dehar.player.ui.components.DecoderChoiceDialog
     data class AutoplayState(val nextTitle: String, val secondsLeft: Int)
     var autoplayState by remember { mutableStateOf<AutoplayState?>(null) }
     var autoplayJob by remember { mutableStateOf<Job?>(null) }
+
+    // Debug Stats Overlay (Bug 11 — new feature)
+    var showDebugOverlay by remember { mutableStateOf(false) }
+    var debugDecoderName by remember { mutableStateOf("") }
+    var debugFrameRate by remember { mutableFloatStateOf(0f) }
+    var debugDroppedFrames by remember { mutableIntStateOf(0) }
+
+    // Volume Boost (new feature)
+    var showVolumeBoostDialog by remember { mutableStateOf(false) }
+    var volumeBoostPercent by remember { mutableIntStateOf(100) }
 
     // Seek thumbnail preview state
     val thumbnailExtractor = remember { ThumbnailPreviewExtractor(context.applicationContext) }
@@ -1853,6 +1860,28 @@ import com.dehar.player.ui.components.DecoderChoiceDialog
                                 showRightSidePanel = false
                             }
                         )
+
+                        // 11. Volume Boost
+                        RightPanelMenuItem(
+                            icon = Icons.Default.VolumeUp,
+                            title = "Volume Boost",
+                            subtitle = if (volumeBoostPercent > 100) "Boosted: ${volumeBoostPercent}%" else "Normal volume (100%)",
+                            onClick = {
+                                showVolumeBoostDialog = true
+                                showRightSidePanel = false
+                            }
+                        )
+
+                        // 12. Debug Stats Overlay
+                        RightPanelMenuItem(
+                            icon = Icons.Default.BugReport,
+                            title = if (showDebugOverlay) "Hide Debug Stats" else "Debug Stats Overlay",
+                            subtitle = "Live codec / fps / bitrate info",
+                            onClick = {
+                                showDebugOverlay = !showDebugOverlay
+                                showRightSidePanel = false
+                            }
+                        )
                     }
                 }
             }
@@ -1889,12 +1918,14 @@ import com.dehar.player.ui.components.DecoderChoiceDialog
 
         if (showSleepTimerDialog) {
             SleepTimerDialog(
-                onTimerSet = { minutes, finishCurrent ->
+                isMusic = false,
+                onTimerSet = { minutes, finishCurrent, _ ->
                     sleepTimerRemainingSec = minutes * 60
                     finishCurrentOnTimer = finishCurrent
                     showSleepTimerDialog = false
                     Toast.makeText(context, "Timer set for $minutes minutes.", Toast.LENGTH_SHORT).show()
                 },
+                onCancel = { sleepTimerRemainingSec = 0 },
                 onDismiss = { showSleepTimerDialog = false }
             )
         }
@@ -2008,6 +2039,118 @@ import com.dehar.player.ui.components.DecoderChoiceDialog
             TutorialOverlay(
                 onDismiss = { showTutorialOverlay = false }
             )
+        }
+
+        // Volume Boost Dialog
+        if (showVolumeBoostDialog) {
+            AlertDialog(
+                onDismissRequest = { showVolumeBoostDialog = false },
+                containerColor = Color(0xFF1A1A2E),
+                titleContentColor = Color.White,
+                title = { Text("Volume Boost", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Boost: ${volumeBoostPercent}%",
+                            color = DeharAccent,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Slider(
+                            value = volumeBoostPercent.toFloat(),
+                            onValueChange = { v ->
+                                volumeBoostPercent = v.toInt()
+                                // Apply LoudnessEnhancer effect
+                                val gainMdb = ((v - 100f) / 100f * 2000f).toInt().coerceAtLeast(0)
+                                try {
+                                    val loudness = android.media.audiofx.LoudnessEnhancer(
+                                        playerManager.exoPlayer?.audioSessionId ?: 0
+                                    )
+                                    if (v > 100f) {
+                                        loudness.setTargetGain(gainMdb)
+                                        loudness.enabled = true
+                                    } else {
+                                        loudness.enabled = false
+                                    }
+                                } catch (_: Exception) {}
+                            },
+                            valueRange = 100f..200f,
+                            steps = 19,
+                            colors = SliderDefaults.colors(thumbColor = DeharAccent, activeTrackColor = DeharAccent)
+                        )
+                        if (volumeBoostPercent > 100) {
+                            Text(
+                                "⚠ Boosting above 100% may cause distortion at very high levels.",
+                                color = Color(0xFFFFCC00),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showVolumeBoostDialog = false }) {
+                        Text("Done", color = DeharAccent)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        volumeBoostPercent = 100
+                        try {
+                            val loudness = android.media.audiofx.LoudnessEnhancer(
+                                playerManager.exoPlayer?.audioSessionId ?: 0
+                            )
+                            loudness.enabled = false
+                        } catch (_: Exception) {}
+                        showVolumeBoostDialog = false
+                    }) {
+                        Text("Reset", color = Color.Gray)
+                    }
+                }
+            )
+        }
+
+        // Debug Stats Overlay
+        if (showDebugOverlay) {
+            val player = playerManager.exoPlayer
+            LaunchedEffect(showDebugOverlay) {
+                while (showDebugOverlay) {
+                    player?.let { p ->
+                        try {
+                            val format = p.videoFormat
+                            debugDecoderName = format?.sampleMimeType ?: "unknown"
+                            debugFrameRate = format?.frameRate ?: 0f
+                            val stats = p.videoDecoderCounters
+                            debugDroppedFrames = stats?.droppedBufferCount ?: 0
+                        } catch (_: Exception) {}
+                    }
+                    kotlinx.coroutines.delay(1000)
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 16.dp, top = 48.dp)
+                    .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    val player2 = playerManager.exoPlayer
+                    val res = player2?.videoFormat?.let { "${it.width}x${it.height}" } ?: "-"
+                    val fps = if (debugFrameRate > 0) String.format("%.1f fps", debugFrameRate) else "-"
+                    val codec = debugDecoderName.substringAfterLast("/").take(20)
+                    val dropped = debugDroppedFrames
+                    val bufPct = if (duration > 0) ((bufferedPos.toFloat() / duration) * 100).toInt() else 0
+                    listOf(
+                        "🎞 Codec: $codec",
+                        "📐 Res: $res",
+                        "⚡ FPS: $fps",
+                        "❌ Dropped: $dropped",
+                        "📦 Buffer: $bufPct%"
+                    ).forEach { line ->
+                        Text(line, color = Color.White, fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                    }
+                }
+            }
         }
     }
 }
@@ -2454,67 +2597,6 @@ private fun RightPanelMenuItem(
             )
         }
     }
-}
-
-@Composable
-private fun SleepTimerDialog(
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var customMinutes by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.Black,
-        titleContentColor = Color.White,
-        textContentColor = Color.White,
-        title = {
-            Text("Sleep Timer", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                listOf(5, 10, 30, 60).forEach { mins ->
-                    Button(
-                        onClick = { onSelect(mins) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.12f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("${mins} minutes", color = Color.White)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = customMinutes,
-                        onValueChange = { customMinutes = it.filter { char -> char.isDigit() } },
-                        label = { Text("Custom minutes", color = Color.Gray) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DeharAccent,
-                            unfocusedBorderColor = Color.Gray,
-                            focusedLabelColor = DeharAccent,
-                            unfocusedLabelColor = Color.Gray,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Button(
-                        onClick = {
-                            val mins = customMinutes.toIntOrNull() ?: 0
-                            if (mins > 0) onSelect(mins)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = DeharAccent)
-                    ) {
-                        Text("Set", color = Color.Black)
-                    }
-                }
-            }
-        },
-        confirmButton = {}
-    )
 }
 
 @Composable

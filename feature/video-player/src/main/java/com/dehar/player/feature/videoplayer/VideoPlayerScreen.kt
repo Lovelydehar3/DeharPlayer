@@ -46,7 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.dehar.player.feature.videoplayer.viewmodel.VideoPlayerViewModel
 import com.dehar.player.feature.videoplayer.viewmodel.VideoPlaybackState
 
@@ -62,9 +62,10 @@ fun VideoPlayerScreen(
             .background(Color.Black)
     ) {
         // Video display area
-        if (uiState.currentVideo?.thumbnailUri != null) {
+        val currentVideo = uiState.currentVideo
+        if (currentVideo?.thumbnailUri != null) {
             AsyncImage(
-                model = uiState.currentVideo.thumbnailUri,
+                model = currentVideo.thumbnailUri,
                 contentDescription = "Video player",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

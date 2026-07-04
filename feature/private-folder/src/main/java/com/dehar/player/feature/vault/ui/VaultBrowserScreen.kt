@@ -47,6 +47,7 @@ import com.dehar.player.feature.vault.viewmodel.VaultViewModel
 /**
  * Main vault browser screen
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun VaultBrowserScreen(
     onNavigateBack: () -> Unit,

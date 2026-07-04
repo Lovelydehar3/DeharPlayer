@@ -1,6 +1,7 @@
 package com.dehar.player.data
 
 import android.content.ContentUris
+import android.net.Uri
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
@@ -8,6 +9,7 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import android.media.MediaMetadataRetriever
 import com.dehar.player.core.data.database.DeharDatabase
 import com.dehar.player.core.data.model.RecycleBinEntity
 import com.dehar.player.core.data.model.MediaType

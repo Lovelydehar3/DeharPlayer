@@ -85,7 +85,7 @@ class Converters {
         RecycleBinEntity::class
     ],
     version = 1,
-    exportSchema = true,
+    exportSchema = false,
     autoMigrations = []
 )
 @TypeConverters(Converters::class)
@@ -133,7 +133,7 @@ abstract class DeharDatabase : RoomDatabase() {
                     
                     // Fallback to destructive migration for development
                     // Remove this in production and implement proper migrations
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     
                     // Allow main thread queries (not recommended, but useful for initialization)
                     //.allowMainThreadQueries()

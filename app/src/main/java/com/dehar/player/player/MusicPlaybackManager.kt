@@ -59,6 +59,8 @@ class MusicPlaybackManager(private val context: Context) {
     
     var currentQueue = mutableStateOf<List<SongData>>(emptyList())
     var currentSongIndex by mutableIntStateOf(-1)
+    var currentSong by mutableStateOf<SongData?>(null)
+    var isPlaying by mutableStateOf(false)
     
     var sleepTimerRemainingSec by mutableIntStateOf(0)
     var playbackSpeed by mutableFloatStateOf(1.0f)
@@ -328,6 +330,32 @@ class MusicPlaybackManager(private val context: Context) {
                 sleepTimerRemainingSec--
                 if (sleepTimerRemainingSec == 0) {
                     pause()
+                }
+            }
+        }
+    }
+
+    fun startSleepTimerAfterSong() {
+        sleepTimerJob?.cancel()
+        // Set a large value so the UI shows the moon icon as active
+        sleepTimerRemainingSec = Int.MAX_VALUE
+        sleepTimerJob = scope.launch {
+            // Wait for song to transition, then pause
+            val currentSongId = currentSong?.id
+            while (true) {
+                delay(500)
+                // When song changes (transition), stop
+                if (currentSong?.id != currentSongId && currentSongId != null) {
+                    delay(200)
+                    pause()
+                    sleepTimerRemainingSec = 0
+                    break
+                }
+                // Fallback: if playback ended
+                if (controller?.playbackState == androidx.media3.common.Player.STATE_ENDED) {
+                    pause()
+                    sleepTimerRemainingSec = 0
+                    break
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.dehar.player.feature.ringtoneEditor.viewmodel
+package com.dehar.player.feature.ringtoneeditor.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,13 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import com.dehar.player.feature.ringtoneEditor.model.PlaybackState
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneAudio
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneEditorUiState
-import com.dehar.player.feature.ringtoneEditor.model.RingtoneType
-import com.dehar.player.feature.ringtoneEditor.model.TrimState
-import com.dehar.player.feature.ringtoneEditor.repository.RingtoneEditorRepository
+import com.dehar.player.feature.ringtoneeditor.model.PlaybackState
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneAudio
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneEditorUiState
+import com.dehar.player.feature.ringtoneeditor.model.RingtoneType
+import com.dehar.player.feature.ringtoneeditor.model.TrimState
+import com.dehar.player.feature.ringtoneeditor.repository.RingtoneEditorRepository
 
 /**
  * ViewModel for ringtone editor feature
@@ -23,8 +25,10 @@ import com.dehar.player.feature.ringtoneEditor.repository.RingtoneEditorReposito
 @HiltViewModel
 class RingtoneEditorViewModel @Inject constructor(
     private val repository: RingtoneEditorRepository,
-    private val exoPlayer: ExoPlayer
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    private val exoPlayer: ExoPlayer = ExoPlayer.Builder(context).build()
 
     private val _uiState = MutableStateFlow(RingtoneEditorUiState())
     val uiState: StateFlow<RingtoneEditorUiState> = _uiState.asStateFlow()

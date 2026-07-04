@@ -22,6 +22,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -76,7 +77,7 @@ fun DeharBottomSheet(
 data class ContextMenuAction(
     val id: String,
     val label: String,
-    val iconVector: androidx.compose.material.icons.ImageVector? = null,
+    val iconVector: ImageVector? = null,
     val isDestructive: Boolean = false
 )
 

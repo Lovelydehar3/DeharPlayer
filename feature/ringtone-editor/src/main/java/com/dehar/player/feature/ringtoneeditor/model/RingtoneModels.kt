@@ -1,4 +1,4 @@
-package com.dehar.player.feature.ringtoneEditor.model
+package com.dehar.player.feature.ringtoneeditor.model
 
 import androidx.annotation.IntRange
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -44,7 +45,7 @@ import com.dehar.player.data.PlaylistManager
 import com.dehar.player.data.SongData
 import com.dehar.player.player.MusicPlaybackManager
 import com.dehar.player.ui.theme.DeharAccent
-import com.dehar.player.utils.TimeUtils
+import com.dehar.player.core.common.TimeUtils
 import kotlinx.coroutines.launch
 import java.util.Collections
 
@@ -716,6 +717,20 @@ fun NowPlayingScreen(
                         }
                     }
                     
+                    // After current song — music specific
+                    Button(
+                        onClick = {
+                            // Set a very long timer that will be cancelled when song ends
+                            musicPlaybackManager.startSleepTimerAfterSong()
+                            showTimerDialog = false
+                            Toast.makeText(context, "Will stop after current song", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DeharAccent.copy(alpha = 0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🎵 After current song ends", color = DeharAccent)
+                    }
+
                     listOf(5, 15, 30, 60).forEach { mins ->
                         Button(
                             onClick = {
